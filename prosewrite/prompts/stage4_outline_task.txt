@@ -3,6 +3,11 @@ TASK: CHAPTER [[chapter_num]] OUTLINE — "[[chapter_title]]"
 CHAPTER LIST ENTRY:
 [[chapter_list_entry]]
 
+CHAPTER HOOK / ENDING (how this chapter must end):
+---
+[[chapter_hook]]
+---
+
 MACRO SUMMARY (story so far):
 ---
 [[macro_summary]]
@@ -13,31 +18,35 @@ CHARACTER PROFILES (characters in this chapter):
 [[character_profiles]]
 ---
 
-Write a detailed chapter outline for Chapter [[chapter_num]].
+⚠ BEFORE WRITING: Re-read the SEED DOCUMENT above. Any specific requirements, scenes, details, or story beats the author placed in the seed MUST be honoured. If any seed requirement belongs in this chapter, it must appear explicitly in the outline.
+
+The chapter hook above defines where this chapter must end. Work backwards from that ending — every scene should build inevitably toward it.
 
 ## Chapter Purpose
-State in one sentence what this chapter must accomplish for the story. What is different at the end versus the beginning?
+One sentence: what is irrevocably different at the end of this chapter versus the beginning?
 
 ## Scene Breakdown
-List every scene in order:
+List every scene in order. Be specific — vague scene descriptions produce vague prose.
 
-**Scene N** — [Location, time of day]
-- Characters present:
-- What happens (action, not summary):
-- What is NOT said but present in the subtext:
-- How it ends / transitions to next scene:
+**Scene N** — [Location, time of day, atmosphere if relevant]
+- Characters present and their immediate goal in this scene:
+- What happens (concrete action and dialogue beats — not summary):
+- The subtext: what is NOT said but present underneath the scene:
+- How the scene ends and transitions to the next:
 
 ## Emotional Arc
-The reader's emotional journey through this chapter. Start point → pressure points → end point. Be specific about the target feeling at the chapter's last line.
+The reader's emotional journey. Start state → pressure points → end state.
+Name the exact feeling the last line of this chapter should produce.
 
-## Characters in This Chapter
-For each character appearing: their specific goal in this chapter (what they want from the other characters), and what they are concealing.
+## Character Dynamics
+For each character with significant page time: their specific want in this chapter, what they're hiding, and how they are changed by the chapter's end.
 
 ## Continuity Tripwires
-Facts established in this chapter that future chapters must not contradict. Facts from previous chapters that this chapter must honour.
+- Facts established HERE that future chapters must not contradict
+- Facts from earlier chapters that THIS chapter must honour
 
 ## The Hook
-The exact situation, image, or line of dialogue that ends this chapter. It must leave the reader unable to stop.
+The exact closing image, situation, or line of dialogue — consistent with the chapter hook brief above.
 
 ## Pacing Notes
-Is this chapter action-heavy or quiet? Where is the chapter's own midpoint reversal? What is the chapter's internal rhythm?
+Action-heavy or quiet? Where is the chapter's internal reversal? Short sharp scenes or longer immersive ones?

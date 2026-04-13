@@ -27,6 +27,9 @@ def show_stage_header(stage_name: str, stage_num: int) -> None:
     console.print()
 
 
+_STREAM_TAIL_LINES = 30  # lines shown during streaming (tail scroll)
+
+
 def stream_response(
     chunks: Iterator[str],
     title: str = "Response",
@@ -34,27 +37,41 @@ def stream_response(
 ) -> str:
     """
     Stream LLM output into a Live panel.
-    Shows plain text with a blinking cursor during streaming, then re-renders
-    as Markdown with a word count on completion. Returns the full text.
+
+    During streaming: shows the last _STREAM_TAIL_LINES lines so the panel
+    never overflows the terminal, with a live word count in the subtitle.
+
+    On completion: renders the full text as Markdown (scrollable in terminal
+    history) with a final word count.
     """
     full_text = ""
 
-    def _panel(text: str, done: bool = False) -> Panel:
-        content = Markdown(text) if done else Text(text + "▌")
-        subtitle = f"{word_count(text):,} words" if done else ""
+    def _streaming_panel(text: str) -> Panel:
+        wc = word_count(text)
+        lines = text.splitlines()
+        visible = "\n".join(lines[-_STREAM_TAIL_LINES:]) if len(lines) > _STREAM_TAIL_LINES else text
         return Panel(
-            content,
+            Text(visible + "▌"),
             title=f"[bold]{title}[/bold]",
-            subtitle=subtitle,
+            subtitle=f"[dim]{wc:,} words…[/dim]",
             border_style=border_style,
             padding=(1, 2),
         )
 
-    with Live(_panel(""), refresh_per_second=15, console=console) as live:
+    def _done_panel(text: str) -> Panel:
+        return Panel(
+            Markdown(text),
+            title=f"[bold]{title}[/bold]",
+            subtitle=f"{word_count(text):,} words",
+            border_style=border_style,
+            padding=(1, 2),
+        )
+
+    with Live(_streaming_panel(""), refresh_per_second=15, console=console) as live:
         for chunk in chunks:
             full_text += chunk
-            live.update(_panel(full_text))
-        live.update(_panel(full_text, done=True))
+            live.update(_streaming_panel(full_text))
+        live.update(_done_panel(full_text))
 
     return full_text
 

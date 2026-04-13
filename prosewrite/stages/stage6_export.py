@@ -12,7 +12,11 @@ from ..state import ProjectState, save_state
 def run(cfg: ProjectConfig, project_dir: Path, state: ProjectState) -> None:
     """Stage 6 — Export all approved chapters to manuscript.md (and optionally .docx)."""
     chapters_dir = project_dir / "chapters"
-    chapter_files = sorted(chapters_dir.glob("chapter_*.md")) if chapters_dir.exists() else []
+    import re as _re
+    def _chapter_num(p):
+        m = _re.search(r"chapter_(\d+)", p.name)
+        return int(m.group(1)) if m else 9999
+    chapter_files = sorted(chapters_dir.glob("chapter_*.md"), key=_chapter_num) if chapters_dir.exists() else []
 
     if not chapter_files:
         show_warning("No approved chapters found in chapters/ directory.")

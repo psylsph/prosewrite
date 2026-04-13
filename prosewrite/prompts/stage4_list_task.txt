@@ -1,17 +1,16 @@
-TASK: CHAPTER LIST
+TASK: CHAPTER HOOKS
 
-Produce the complete chapter list for this novel. This is the structural skeleton — every chapter must justify its existence.
+⚠ CRITICAL: The SEED DOCUMENT contains specific requirements the author has mandated for this story. Every requirement in the seed — specific scenes, plot events, character moments, world details — must be assigned to a chapter. Do not invent a chapter plan that ignores or sidelines these requirements.
 
-Format as a Markdown table:
+Write one hook entry per chapter, for all [[total_chapters]] chapters (plus Chapter 0 if there is a prelude).
 
-| # | Title | POV Character | Location | Purpose (one line) | Ends on |
-|---|-------|---------------|----------|--------------------|---------|
+Format each entry exactly like this:
 
-Rules:
-- Chapter count must match the Story Bible: [[total_chapters]] chapters
-- Every chapter must have a clear narrative purpose — what changes between the first page and the last page of this chapter?
-- "Ends on" should be a hook, reversal, or unresolved question — never a resolution
-- POV character must be from the character index
-- No filler chapters. If a chapter cannot be summarised in one sharp line, it does not belong.
+**Chapter N — Title**
+POV: [character name] | Location: [setting]
+Purpose: [one line — what changes between the first and last page of this chapter]
+100-200 words describing exactly how this chapter ends: the specific situation, image, line of dialogue, or revelation the reader is left with. This must be a hook, reversal, or unresolved question — never a resolution. Name the characters present, the physical setting, and what has just happened or been revealed in the final moments.
 
-After the table, write a one-paragraph structural note explaining the pacing logic: where is the midpoint? Where is the "all is lost" moment? Where does the climax begin?
+---
+
+Write every chapter in order. Do not skip any. After all chapters, write one short paragraph on overall pacing: where is the midpoint, the "all is lost" moment, and when does the climax begin?

@@ -1,5 +1,10 @@
 PROJECT: [[project_name]]
 
+SEED DOCUMENT (author's original vision — specific requirements here MUST appear in the story):
+---
+[[seed_content]]
+---
+
 STORY BIBLE:
 ---
 [[story_bible_content]]

@@ -11,6 +11,7 @@ console = Console()
 
 class ApprovalAction(Enum):
     APPROVE = auto()
+    APPROVE_ALL = auto()
     REGENERATE = auto()
     FEEDBACK = auto()
     EDIT = auto()
@@ -20,6 +21,8 @@ class ApprovalAction(Enum):
 
 # Keywords that map to each action (checked in order, case-insensitive)
 _PATTERNS: list[tuple[ApprovalAction, list[str]]] = [
+    (ApprovalAction.APPROVE_ALL, ["approve all", "approve remaining", "auto approve",
+                                  "auto-approve", "approve rest"]),
     (ApprovalAction.APPROVE,     ["yes", "good", "looks great", "approve", "next", "perfect",
                                   "great", "ok", "okay", "done", "ship it", "lgtm"]),
     (ApprovalAction.REGENERATE,  ["redo", "again", "not right", "regenerate", "try again",

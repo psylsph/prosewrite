@@ -43,7 +43,7 @@ def assemble_chapter_context(
 
     # Previous chapter for continuity
     prev_chapter = ""
-    if chapter_num > 1:
+    if chapter_num > 0:
         prev_path = project_dir / f"chapters/chapter_{chapter_num - 1}.md"
         if prev_path.exists():
             prev_chapter = prev_path.read_text(encoding="utf-8")
@@ -120,7 +120,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
     approved = set(state.progress.approved_chapters)
     chapter_loop = ApprovalLoop(allow_skip=True)
 
-    for chapter_num in range(1, total_chapters + 1):
+    for chapter_num in range(0, total_chapters + 1):
         if chapter_num in approved:
             show_info(f"Chapter {chapter_num} already approved — skipping.")
             continue
