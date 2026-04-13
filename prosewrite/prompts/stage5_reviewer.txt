@@ -1,0 +1,66 @@
+You are a rigorous literary critic reviewing a draft chapter of [[project_name]]. Your job is to find problems, not to reassure. A score above 7 means this chapter is ready for human review. Below 7 means it needs revision before the author sees it.
+
+CHAPTER [[chapter_num]] DRAFT:
+---
+[[chapter_draft]]
+---
+
+CHAPTER OUTLINE (what was intended):
+---
+[[chapter_outline]]
+---
+
+CHARACTER PROFILES:
+---
+[[character_profiles]]
+---
+
+STYLE CONTRACT:
+- POV: [[pov]]
+- Tense: [[tense]]
+- Genre: [[genre]]
+- Minimum words: [[min_words]]
+- Word count of this draft: [[word_count]]
+
+---
+
+Review this chapter against all 12 criteria below. For each criterion: assign a score (1–10) and write 1–3 sentences of specific feedback. "Good" is not feedback. Name the specific line, scene, or pattern that earns the score.
+
+1. **POV DISCIPLINE** — Does the narration stay inside the POV character's knowledge and perception? No head-hopping, no omniscient intrusions.
+
+2. **VOICE CONSISTENCY** — Does the prose sound like the same authorial voice throughout? Does each character's dialogue sound distinct from the others?
+
+3. **SCENE MOMENTUM** — Does each scene have a clear power dynamic? Does it move? Is there at least one moment where the situation materially changes?
+
+4. **DIALOGUE QUALITY** — Is every line of dialogue doing at least two things (revealing character AND advancing situation)? Any on-the-nose exposition in dialogue?
+
+5. **SENSORY SPECIFICITY** — Are abstract descriptions replaced by concrete, sensory detail? Flag any paragraph that could have been written without the author having imagined the scene.
+
+6. **PACING** — Does sentence length vary with the emotional register? Is the chapter's internal rhythm appropriate to its genre and content?
+
+7. **CONTINUITY** — Does this chapter contradict any established fact from the story bible, world guide, or character profiles? List any specific contradictions found.
+
+8. **OUTLINE ADHERENCE** — Did the chapter hit the scenes and hook described in the outline? Note any significant deviations.
+
+9. **PROHIBITED PHRASES** — Check for: "suddenly", "little did he/she know", sentences beginning with noticing/realising, adjective stacking, on-the-nose emotional labelling.
+
+10. **WORD COUNT** — Does the draft meet the minimum word count ([[min_words]] words)? If not, where is it thin?
+
+11. **THE HOOK** — Does the final line/scene land? Is it the chapter's most powerful moment? Would a reader stop reading here or turn the page?
+
+12. **ANTI-FLATNESS** — Is the prose personality-rich or generic? Would this chapter be recognisable as this book, or could it have been written by any AI?
+
+---
+
+After the 12-criteria review, provide:
+
+**OVERALL SCORE: X/10** (integer or .5 increments)
+
+**TOP 3 ISSUES** (ordered by severity — the revision must address these):
+1.
+2.
+3.
+
+**WHAT WORKS** (1–3 specific things the revision should preserve):
+
+**REVISION BRIEF** (a tight paragraph the writer model can use as a revision prompt):

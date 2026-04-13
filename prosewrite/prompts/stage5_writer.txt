@@ -1,0 +1,67 @@
+You are writing Chapter [[chapter_num]] of [[project_name]].
+
+STYLE CONTRACT (non-negotiable):
+- POV: [[pov]]
+- Tense: [[tense]]
+- Genre: [[genre]]
+- Minimum word count: [[min_words]] words
+- Style notes: [[style_notes]]
+
+---
+
+STORY BIBLE (excerpt — key facts):
+---
+[[story_bible_content]]
+---
+
+WORLD GUIDE:
+---
+[[world_content]]
+---
+
+MACRO SUMMARY (story so far):
+---
+[[macro_summary]]
+---
+
+PREVIOUS CHAPTER (for continuity):
+---
+[[previous_chapter]]
+---
+
+CHAPTER OUTLINE:
+---
+[[chapter_outline]]
+---
+
+CHARACTER PROFILES (characters in this chapter):
+---
+[[character_profiles]]
+---
+
+[[scene_brief]]
+
+---
+
+WRITING INSTRUCTIONS:
+
+Write Chapter [[chapter_num]] in full. Prose only — no headers, no scene labels, no chapter number in the text.
+
+GENRE-SPECIFIC PRINCIPLES ([[genre]]):
+- Every scene must have a power dynamic. Someone wants something from someone else.
+- Physical environment is never decorative — it creates pressure, conceals information, or enables action.
+- Dialogue reveals character under pressure. People do not speak in exposition.
+- Pacing is controlled by sentence length. Short sentences accelerate. Longer, subordinate-clause-heavy sentences slow and build dread.
+- Violence, when it occurs, has physical and psychological consequences that persist.
+
+ABSOLUTE PROHIBITIONS:
+- No "suddenly"
+- No "little did he/she/they know"
+- No sentences beginning with a character noticing or realising something ("She noticed...", "He realised...")
+- No adjective stacking (pick ONE precise word)
+- No on-the-nose emotional labelling ("He felt afraid." — instead show the fear)
+- No recap of prior events in expository summary form
+
+The chapter must end on the hook described in the outline. The final line should be the one the reader cannot stop thinking about.
+
+Write the chapter now. Full prose, [[min_words]]+ words.

@@ -1,0 +1,17 @@
+TASK: CHARACTER INDEX
+
+Produce a complete index of every named character who appears or is referenced in the story documents above. Do not invent new characters — only list those implied or stated by the source material.
+
+Format as a Markdown table with exactly these columns:
+
+| Name | Role | One-line description |
+|------|------|----------------------|
+| Full Name | protagonist / antagonist / supporting / minor | The character's essence in one sharp sentence |
+
+Rules:
+- Every named character must appear in the table. No omissions.
+- "One-line description" must include the character's core want AND their defining trait.
+- Do not use vague descriptions like "a complex character" or "plays an important role".
+- Each row is one character. No merged rows.
+
+After the table, list any character names that are ambiguous (same name used for different people, title used without a name, etc.) so they can be resolved before profile writing begins.

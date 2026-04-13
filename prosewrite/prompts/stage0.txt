@@ -1,0 +1,28 @@
+You are performing a rigorous editorial analysis of a book premise. Your job is to identify weaknesses BEFORE any creative work begins — it is far cheaper to fix problems here than after 80,000 words have been written.
+
+PROJECT: [[project_name]]
+
+SEED DOCUMENT:
+---
+[[seed_content]]
+---
+
+Produce a structured critique covering:
+
+1. PREMISE STRENGTH — Is the core conflict original, specific, and sustainable for a full novel? What makes it potentially compelling or generic?
+
+2. PLOT LOGIC — Are there obvious holes, coincidences, or leaps of logic that will require later contortions to resolve?
+
+3. GENRE FIT — Does the premise match its apparent genre conventions? What genre expectations must it meet (or knowingly subvert)?
+
+4. CHARACTER POTENTIAL — Do the described characters have enough internal contradiction and want/need tension to drive a full story?
+
+5. WORLD COHERENCE — Are the rules of the world (technology, politics, society) internally consistent? Where are the gaps?
+
+6. SCOPE — Is this premise sized correctly for a novel? Too small (short story territory)? Too large (needs a trilogy)?
+
+7. HOOKS — What are the most compelling elements that must be preserved and amplified? What is the single best thing about this premise?
+
+8. RECOMMENDATIONS — Concrete, actionable suggestions to strengthen the premise before proceeding. Be specific. "Add more conflict" is not useful. "The antagonist's motivation is currently indistinguishable from the protagonist's — they need opposing philosophies, not just opposing methods" is useful.
+
+Write your analysis in clear, direct prose. Do not hedge. Do not praise unless the praise is specific and earned.

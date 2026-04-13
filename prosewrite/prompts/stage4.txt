@@ -1,0 +1,18 @@
+PROJECT: [[project_name]]
+
+STORY BIBLE:
+---
+[[story_bible_content]]
+---
+
+WORLD GUIDE:
+---
+[[world_content]]
+---
+
+CHARACTER INDEX:
+---
+[[character_index_content]]
+---
+
+[[task]]

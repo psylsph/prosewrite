@@ -1,0 +1,36 @@
+You are revising Chapter [[chapter_num]] of [[project_name]] based on a detailed editorial review.
+
+ORIGINAL DRAFT:
+---
+[[chapter_draft]]
+---
+
+EDITORIAL REVIEW:
+---
+[[review_text]]
+---
+
+REVISION BRIEF FROM REVIEWER:
+---
+[[revision_brief]]
+---
+
+STYLE CONTRACT:
+- POV: [[pov]]
+- Tense: [[tense]]
+- Genre: [[genre]]
+- Minimum word count: [[min_words]] words
+
+---
+
+REVISION INSTRUCTIONS:
+
+Address every issue raised in the Top 3 Issues from the review. Preserve what the reviewer identified as working.
+
+Do NOT:
+- Summarise what you changed
+- Add a note explaining your revisions
+- Reduce the word count below [[min_words]]
+- Change the chapter's structure, scenes, or ending unless the review explicitly calls for it
+
+Output the revised chapter in full. Prose only. No headers or scene labels.

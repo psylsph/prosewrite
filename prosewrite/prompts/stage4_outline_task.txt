@@ -1,0 +1,43 @@
+TASK: CHAPTER [[chapter_num]] OUTLINE — "[[chapter_title]]"
+
+CHAPTER LIST ENTRY:
+[[chapter_list_entry]]
+
+MACRO SUMMARY (story so far):
+---
+[[macro_summary]]
+---
+
+CHARACTER PROFILES (characters in this chapter):
+---
+[[character_profiles]]
+---
+
+Write a detailed chapter outline for Chapter [[chapter_num]].
+
+## Chapter Purpose
+State in one sentence what this chapter must accomplish for the story. What is different at the end versus the beginning?
+
+## Scene Breakdown
+List every scene in order:
+
+**Scene N** — [Location, time of day]
+- Characters present:
+- What happens (action, not summary):
+- What is NOT said but present in the subtext:
+- How it ends / transitions to next scene:
+
+## Emotional Arc
+The reader's emotional journey through this chapter. Start point → pressure points → end point. Be specific about the target feeling at the chapter's last line.
+
+## Characters in This Chapter
+For each character appearing: their specific goal in this chapter (what they want from the other characters), and what they are concealing.
+
+## Continuity Tripwires
+Facts established in this chapter that future chapters must not contradict. Facts from previous chapters that this chapter must honour.
+
+## The Hook
+The exact situation, image, or line of dialogue that ends this chapter. It must leave the reader unable to stop.
+
+## Pacing Notes
+Is this chapter action-heavy or quiet? Where is the chapter's own midpoint reversal? What is the chapter's internal rhythm?

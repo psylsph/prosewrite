@@ -1,0 +1,8 @@
+.venv
+venv
+_ideas/**
+projects/**
+prosewrite_spec.md
+.pytest_cache/
+__pycache__/
+*.pyc

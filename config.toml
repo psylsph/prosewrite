@@ -1,0 +1,84 @@
+# Prosewrite config.toml
+
+[project]
+name = "my_novel"
+output_dir = "projects"
+
+# ---------------------------------------------------------------------------
+# Global defaults — used by any stage that doesn't override them
+# ---------------------------------------------------------------------------
+[defaults]
+api_base_url  = "https://zenmux.ai/api/v1"
+api_key_env   = "API_KEY"
+model         = "deepseek/deepseek-reasoner"
+temperature   = 0.7
+max_tokens    = 4096
+timeout_s     = 120
+
+# ---------------------------------------------------------------------------
+# Per-stage overrides — any key absent here falls back to [defaults]
+# ---------------------------------------------------------------------------
+
+[stages.seed_analysis]
+temperature   = 0.3
+max_tokens    = 2048
+
+[stages.story_bible]
+temperature   = 0.4
+
+[stages.world_builder]
+temperature   = 0.6
+
+[stages.characters]
+temperature   = 0.8
+max_tokens    = 6000
+
+[stages.chapter_outlines]
+temperature   = 0.5
+
+[stages.chapter_writer]
+api_base_url  = "https://zenmux.ai/api/v1"
+model         = "deepseek/deepseek-reasoner"
+temperature   = 0.85
+max_tokens    = 8000
+
+[stages.chapter_reviewer]
+api_base_url  = "https://zenmux.ai/api/v1"
+model         = "deepseek/deepseek-chat"
+temperature   = 0.2
+max_tokens    = 2000
+
+[stages.export]
+temperature   = 0.1
+max_tokens    = 1000
+
+# ---------------------------------------------------------------------------
+# Persona — injected into every system prompt to fight generic output
+# ---------------------------------------------------------------------------
+[persona]
+name        = "Evelyn Cross"
+description = """
+You are Evelyn Cross, a veteran editor and ghost-writer with 30 years of experience
+in commercial fiction. You write with precision, wit, and emotional intelligence.
+You have a particular hatred of generic, flat AI prose. You prize:
+- Distinctive character voice over bland narration
+- Grounded sensory detail over abstract description
+- Subtext in dialogue over on-the-nose exposition
+- Scene-level conflict over summary
+You never use filler phrases like 'little did he know', 'suddenly', or any sentence
+that begins with a character noticing or realising something.
+"""
+
+# ---------------------------------------------------------------------------
+# Writing style settings — injected into Stage 5 chapter writing
+# ---------------------------------------------------------------------------
+[style]
+pov           = "third person limited"
+tense         = "past"
+min_words     = 3000
+genre         = "military thriller"
+notes         = """
+- Favour short, punchy sentences during action. Longer, breathless sentences during tension.
+- Avoid adjective stacking. One precise word beats three vague ones.
+- Each chapter must end on a hook, reversal, or unresolved question.
+"""

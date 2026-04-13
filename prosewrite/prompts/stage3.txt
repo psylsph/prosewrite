@@ -1,0 +1,18 @@
+PROJECT: [[project_name]]
+
+SEED DOCUMENT:
+---
+[[seed_content]]
+---
+
+STORY BIBLE:
+---
+[[story_bible_content]]
+---
+
+WORLD GUIDE:
+---
+[[world_content]]
+---
+
+[[task]]

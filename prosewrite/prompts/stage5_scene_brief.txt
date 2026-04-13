@@ -1,0 +1,17 @@
+TASK: INTERNAL SCENE BRIEF (not shown to user — for writer's reference only)
+
+Before writing Chapter [[chapter_num]], commit to these concrete decisions:
+
+1. OPENING IMAGE: The exact first thing the reader sees/hears/smells in this chapter. One sentence. Concrete and specific.
+
+2. CLOSING IMAGE: The exact last image or line of the chapter. Must honour the outline's hook. One sentence.
+
+3. EMOTIONAL ARC: The reader's emotional state at the START of the chapter → the single most important emotional moment → the state at the END. Use specific emotions, not vague ones.
+
+4. THE ONE MOMENT: If this chapter had to be reduced to a single scene, which scene is it? Why does everything else exist to serve this moment?
+
+5. CONTINUITY TRIPWIRES: List 3–5 specific facts from previous chapters or the world guide that this chapter must not contradict.
+
+6. CHARACTER DECISIONS: For each POV character — what decision do they make in this chapter that they cannot unmake?
+
+Output this brief in full before the chapter text begins. The brief will be stripped from the final output — write it knowing only the writing model will see it.

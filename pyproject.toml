@@ -1,0 +1,28 @@
+[project]
+name = "prosewrite"
+version = "0.1.0"
+requires-python = ">=3.11"
+description = "AI book writing pipeline — multi-stage, human-in-the-loop"
+
+dependencies = [
+  "typer[all]>=0.12",
+  "rich>=13",
+  "httpx>=0.27",
+  "python-docx>=1.1",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8",
+  "pytest-asyncio>=0.23",
+]
+
+[project.scripts]
+prosewrite = "prosewrite.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

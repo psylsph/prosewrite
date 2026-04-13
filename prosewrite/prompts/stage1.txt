@@ -1,0 +1,51 @@
+You are constructing the Story Bible — the canonical north star document that every subsequent stage of this project will reference. Every decision made here becomes binding.
+
+PROJECT: [[project_name]]
+
+SEED DOCUMENT:
+---
+[[seed_content]]
+---
+
+SEED ANALYSIS:
+---
+[[seed_analysis_content]]
+---
+
+Produce the Story Bible with these sections:
+
+## Genre & Tone
+State the primary genre, any subgenre blends, and the emotional register (e.g., "relentlessly tense with mordant black humour; no redemption arcs").
+
+## Narrative Arc
+- Act 1 (setup + inciting incident): what happens, what changes
+- Act 2 (complications + midpoint reversal): the escalating pressure
+- Act 3 (climax + resolution): the final confrontation and its aftermath
+Be specific — name characters and events, not just structural labels.
+
+## Central Themes
+List 2–4 themes. For each: state the theme as a question the novel is trying to answer, not an abstract noun.
+
+## POV & Tense
+State the POV strategy (first person, third limited, third omniscient, multiple POV with rules) and narrative tense. Once set, these do not change.
+
+## Chapter Structure
+Estimated total chapter count: [[CHAPTER COUNT: N]] (replace N with your estimate)
+Approximate word count target for the complete manuscript.
+Average chapter length target.
+
+## Central Conflict
+The single irreducible conflict driving the story. If you cannot state this in two sentences, the premise needs more work.
+
+## Stakes
+What is lost if the protagonist fails? Make these concrete, not abstract.
+
+## The Ending
+Describe the final scene or final image. You do not need to know every detail yet, but the emotional destination must be clear.
+
+## What This Book Is NOT
+Explicitly state what this book refuses to be — tropes it will consciously avoid, tonal registers it will reject. This is as important as what it is.
+
+Be specific throughout. Vague Story Bibles produce vague books.
+
+IMPORTANT: Include the line "CHAPTER COUNT: N" (where N is the exact integer) somewhere in your response so the pipeline can extract it automatically.

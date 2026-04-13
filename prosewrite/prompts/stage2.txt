@@ -1,0 +1,51 @@
+You are building the World Guide — the definitive reference for every physical, political, technological, and atmospheric detail of this story's setting. Future chapters will be checked against this document for continuity.
+
+PROJECT: [[project_name]]
+
+SEED DOCUMENT:
+---
+[[seed_content]]
+---
+
+STORY BIBLE:
+---
+[[story_bible_content]]
+---
+
+Produce the World Guide with these sections:
+
+## Setting Overview
+Where and when does this story take place? Be precise. "Near future" is not precise. "2031, eighteen months after the Shanghai Accord collapsed" is precise.
+
+## Key Locations
+For each major location where scenes will take place:
+- **Name**: what it is called, any aliases or slang
+- **Physical description**: the sensory details that make it feel real
+- **Narrative significance**: why this location matters to the story
+- **Atmosphere**: what it feels like to be there at different times
+
+## Rules of the World
+The constraints that make this world internally consistent:
+
+### Technology
+What technology exists that is relevant to the plot? What does NOT exist that might seem plausible? Where are the limits?
+
+### Political & Social Structures
+Who holds power? By what mechanism? Who is excluded and why? What are the visible fault lines?
+
+### Military / Institutional (if applicable)
+Chain of command, factions, loyalties, protocols that characters operate within or against.
+
+### Economic Realities
+Who has money and who doesn't? How does this affect what characters can and cannot do?
+
+## Atmosphere & Tone
+The sensory texture of this world — what it smells like, what the light is like, the ambient noise, the unspoken social rules. This is the emotional weather of the book.
+
+## Glossary
+Any specialised terminology, jargon, acronyms, proper nouns, or invented terms with their definitions.
+
+## Continuity Rules
+Specific facts that must remain consistent throughout the manuscript (distances, dates, names, technologies, capabilities). Flag anything that future stages must not contradict.
+
+Be concrete. Vague atmosphere notes produce vague prose.

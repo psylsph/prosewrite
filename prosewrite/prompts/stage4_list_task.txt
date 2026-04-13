@@ -1,0 +1,17 @@
+TASK: CHAPTER LIST
+
+Produce the complete chapter list for this novel. This is the structural skeleton — every chapter must justify its existence.
+
+Format as a Markdown table:
+
+| # | Title | POV Character | Location | Purpose (one line) | Ends on |
+|---|-------|---------------|----------|--------------------|---------|
+
+Rules:
+- Chapter count must match the Story Bible: [[total_chapters]] chapters
+- Every chapter must have a clear narrative purpose — what changes between the first page and the last page of this chapter?
+- "Ends on" should be a hook, reversal, or unresolved question — never a resolution
+- POV character must be from the character index
+- No filler chapters. If a chapter cannot be summarised in one sharp line, it does not belong.
+
+After the table, write a one-paragraph structural note explaining the pacing logic: where is the midpoint? Where is the "all is lost" moment? Where does the climax begin?

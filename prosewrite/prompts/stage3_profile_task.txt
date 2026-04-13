@@ -1,0 +1,44 @@
+TASK: CHARACTER PROFILE — [[character_name]]
+
+Write a complete character profile for [[character_name]]. This profile will be injected into every chapter where this character appears, so it must be specific enough to make their presence feel distinctive and consistent.
+
+CHARACTER INDEX ENTRY:
+[[character_index_entry]]
+
+Write the following sections:
+
+## Background & History
+The formative experiences that made this person who they are. Specific events, not vague summaries. What is the worst thing that happened to them? What is the thing they are most proud of? What do they wish they could undo?
+
+## Personality
+**Core traits** (3–4, stated as observable behaviours, not adjectives):
+**Fatal flaw** (the thing that will cause problems in the story):
+**Quirks** (specific, observable, slightly odd habits or tendencies):
+**Fears** (concrete, not abstract — "fears disappointing his father" not "fears failure"):
+
+## Motivation & Goals
+**Surface goal**: what they say they want
+**True goal**: what they actually need (may be unconscious)
+**The conflict between these two**: why this gap creates story
+
+## Relationships
+For each significant relationship: the character's name, the nature of the relationship, the unspoken tension or dynamic that runs beneath the surface.
+
+## Physical Description
+3–5 specific physical details that will recur as shorthand in the prose. Avoid laundry-list descriptions. Focus on the details that reveal character: how do they carry themselves? What do they do with their hands?
+
+## Voice & Speech
+This is the most important section. Flat AI prose almost always fails at voice.
+
+**Vocabulary register**: formal / colloquial / technical / mixed — be specific about the domain
+**Sentence rhythm**: do they speak in short bursts or long sinuous sentences? Do they trail off? Interrupt themselves?
+**Verbal tics**: specific repeated phrases, filler words, ways of starting sentences
+**What they never say directly**: the topics they deflect, the emotions they name-substitute, the things they communicate only through action
+**How they sound when lying**: do they over-explain? Go very quiet? Get suddenly formal?
+**Sample lines**: write 3–5 lines of dialogue that could ONLY come from this character
+
+## Character Arc
+Where do they start emotionally? What specific events force them to change? Where do they end? The arc must be caused by the story's events — not just asserted.
+
+## Continuity Notes
+Facts about this character that must not be contradicted: physical details, established history, capabilities, relationships. Flag anything another stage might accidentally get wrong.
