@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from dataclasses import dataclass
 
 from rich.console import Console
+from rich.live import Live
 from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.rule import Rule
@@ -23,6 +25,38 @@ def show_stage_header(stage_name: str, stage_num: int) -> None:
     console.print()
     console.print(Rule(f"[bold]Stage {stage_num} — {stage_name}[/bold]", style="blue"))
     console.print()
+
+
+def stream_response(
+    chunks: Iterator[str],
+    title: str = "Response",
+    border_style: str = "dim",
+) -> str:
+    """
+    Stream LLM output into a Live panel.
+    Shows plain text with a blinking cursor during streaming, then re-renders
+    as Markdown with a word count on completion. Returns the full text.
+    """
+    full_text = ""
+
+    def _panel(text: str, done: bool = False) -> Panel:
+        content = Markdown(text) if done else Text(text + "▌")
+        subtitle = f"{word_count(text):,} words" if done else ""
+        return Panel(
+            content,
+            title=f"[bold]{title}[/bold]",
+            subtitle=subtitle,
+            border_style=border_style,
+            padding=(1, 2),
+        )
+
+    with Live(_panel(""), refresh_per_second=15, console=console) as live:
+        for chunk in chunks:
+            full_text += chunk
+            live.update(_panel(full_text))
+        live.update(_panel(full_text, done=True))
+
+    return full_text
 
 
 def show_draft(text: str, title: str = "Draft", word_count: int | None = None) -> None:

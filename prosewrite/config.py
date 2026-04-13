@@ -136,12 +136,12 @@ def validate_config(cfg: ProjectConfig) -> list[str]:
         warnings.append("[persona] description is empty — AI will use no editorial personality.")
     if cfg.style.min_words < 500:
         warnings.append(f"[style] min_words={cfg.style.min_words} seems very low for a chapter.")
-    if cfg.defaults.temperature > 1.0:
-        warnings.append(f"[defaults] temperature={cfg.defaults.temperature} may be out of range.")
+    if cfg.defaults.temperature > 2.0:
+        warnings.append(f"[defaults] temperature={cfg.defaults.temperature} may be out of range (max 2.0).")
 
     for stage_name, stage in cfg.stages.items():
-        if stage.temperature > 1.0:
-            warnings.append(f"[stages.{stage_name}] temperature={stage.temperature} may be out of range.")
+        if stage.temperature > 2.0:
+            warnings.append(f"[stages.{stage_name}] temperature={stage.temperature} may be out of range (max 2.0).")
         if stage.max_tokens < 256:
             warnings.append(f"[stages.{stage_name}] max_tokens={stage.max_tokens} is very low.")
 

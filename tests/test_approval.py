@@ -77,6 +77,27 @@ class TestClassify:
         text = "Make the dialogue between Sarah and Marcus sharper — she wouldn't concede that quickly"
         assert self._action(text) == ApprovalAction.FEEDBACK
 
+    # REGENERATE + instruction → still REGENERATE but carries the brief
+    def test_redo_with_instruction_is_regenerate(self):
+        assert self._action("redo fix the recommendations") == ApprovalAction.REGENERATE
+
+    def test_redo_with_instruction_carries_brief(self):
+        action, returned = _classify("redo fix the recommendations")
+        assert action == ApprovalAction.REGENERATE
+        assert returned == "fix the recommendations"
+
+    def test_regenerate_with_instruction_carries_brief(self):
+        action, returned = _classify("regenerate but make it darker in tone")
+        assert action == ApprovalAction.REGENERATE
+        assert returned == "but make it darker in tone"
+
+    def test_redo_alone_is_still_regenerate(self):
+        assert self._action("redo") == ApprovalAction.REGENERATE
+
+    def test_redo_with_filler_only_is_regenerate(self):
+        # "redo please" — "please" is filler, no substantive content
+        assert self._action("redo please") == ApprovalAction.REGENERATE
+
     # Case insensitivity
     def test_uppercase_yes(self):
         assert self._action("YES") == ApprovalAction.APPROVE

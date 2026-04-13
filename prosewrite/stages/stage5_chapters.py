@@ -6,10 +6,7 @@ from pathlib import Path
 from ..approval import ApprovalAction, ApprovalLoop
 from ..client import LLMClient
 from ..config import resolve_stage
-from ..display import (
-    ReviewResult, console, show_draft, show_info, show_review,
-    show_success, show_warning, word_count,
-)
+from ..display import console, show_info, show_review, show_success, show_warning, stream_response, word_count
 from ..exceptions import StageError
 from ..reviewer import AIReviewer
 from ..state import ProjectState, save_state
@@ -39,7 +36,6 @@ def assemble_chapter_context(
     character_profiles = ""
     if char_dir.exists():
         for profile_path in sorted(char_dir.glob("*.md")):
-            # Include profile if character name (stem, underscores→spaces) appears in outline
             char_name = profile_path.stem.replace("_", " ").lower()
             if char_name in outline_text.lower():
                 character_profiles += f"\n\n---\n### {profile_path.stem.replace('_', ' ')}\n"
@@ -65,7 +61,7 @@ def assemble_chapter_context(
         "tense": state.settings.tense,
         "genre": state.settings.genre,
         "min_words": str(state.settings.min_words_per_chapter),
-        "style_notes": "",  # filled in by caller from config
+        "style_notes": "",
     }
 
 
@@ -79,7 +75,6 @@ def _update_macro_summary(
     existing = pipeline.read_file("summaries/macro.md")
     current_words = word_count(existing)
 
-    # Ask the writer model for a summary of this chapter
     stage_cfg = resolve_stage(pipeline.cfg, "chapter_writer")
     system = pipeline.build_system_prompt("chapter_writer")
     summary_prompt = (
@@ -94,7 +89,6 @@ def _update_macro_summary(
     new_summary_block = f"\n\n## Chapter {chapter_num} Summary\n{new_summary.strip()}"
 
     if current_words + word_count(new_summary_block) > _MAX_MACRO_WORDS:
-        # Compress: ask model to convert older entries to bullet points
         compress_prompt = (
             f"The macro summary below is getting long. "
             f"Compress older chapter summaries (keep the last 2-3 chapters as narrative paragraphs, "
@@ -110,7 +104,7 @@ def _update_macro_summary(
 
 
 def run(pipeline, state: ProjectState) -> ProjectState:
-    """Stage 5 — Chapter Writing (the most complex stage)."""
+    """Stage 5 — Chapter Writing."""
     total_chapters = state.settings.total_chapters
     if total_chapters == 0:
         raise StageError("total_chapters is 0. Ensure Stage 1 set the chapter count.")
@@ -150,13 +144,16 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         ctx["scene_brief"] = f"INTERNAL SCENE BRIEF:\n{scene_brief}\n---"
 
         # --- 3. Draft generation ---
+        base_write_prompt = pipeline.build_user_prompt("stage5_writer.txt", **ctx)
         show_info(f"Writing draft with {writer_cfg.model} (temp={writer_cfg.temperature})…")
-        write_prompt = pipeline.build_user_prompt("stage5_writer.txt", **ctx)
+        draft_messages = [{"role": "user", "content": base_write_prompt}]
         with LLMClient(writer_cfg) as client:
-            draft = client.complete(writer_system, [{"role": "user", "content": write_prompt}])
-
+            draft = stream_response(
+                client.stream(writer_system, draft_messages),
+                title=f"Chapter {chapter_num} — Draft",
+            )
+        draft_messages.append({"role": "assistant", "content": draft})
         draft_wc = word_count(draft)
-        show_info(f"Draft complete: {draft_wc:,} words.")
 
         # --- 4. AI reviewer pass ---
         show_info("Running AI review…")
@@ -171,16 +168,20 @@ def run(pipeline, state: ProjectState) -> ProjectState:
 
         # --- 5. Revision ---
         show_info("Revising based on review…")
-        revision_prompt = pipeline.build_user_prompt(
+        base_revision_prompt = pipeline.build_user_prompt(
             "stage5_revision.txt",
             chapter_draft=draft,
             review_text=review.full_text,
             revision_brief=review.revision_brief,
-            **{k: v for k, v in ctx.items() if k not in ("scene_brief",)},
+            **{k: v for k, v in ctx.items() if k != "scene_brief"},
         )
+        revision_messages = [{"role": "user", "content": base_revision_prompt}]
         with LLMClient(writer_cfg) as client:
-            revised = client.complete(writer_system, [{"role": "user", "content": revision_prompt}])
-
+            revised = stream_response(
+                client.stream(writer_system, revision_messages),
+                title=f"Chapter {chapter_num} — Revised",
+            )
+        revision_messages.append({"role": "assistant", "content": revised})
         revised_wc = word_count(revised)
 
         # --- 6. Approval loop ---
@@ -190,13 +191,13 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             show_warning(
                 f"Word count {revised_wc:,} is below minimum {state.settings.min_words_per_chapter:,}."
             )
-
-        show_draft(revised, title=f"Chapter {chapter_num} (revised)", word_count=revised_wc)
         console.print(f"[dim]Review score: {review.score}/10  |  Words: {revised_wc:,}[/dim]")
+
+        chapter_brief = ""
 
         while True:
             action, user_text = chapter_loop.wait(
-                "Approve chapter, request changes, 'redo', 'use review', or 'skip'"
+                "Discuss | 'approve' | 'regenerate: note' | 'use review' | 'skip'"
             )
             chapter_path = f"chapters/chapter_{chapter_num}.md"
 
@@ -215,11 +216,27 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 break
 
             elif action == ApprovalAction.REGENERATE:
+                chapter_brief = user_text
                 # Full redo from draft
-                show_info("Regenerating draft from scratch…")
+                write_prompt = base_write_prompt
+                if chapter_brief:
+                    show_info(f"Regenerating draft with guidance: '{chapter_brief}'…")
+                    write_prompt += (
+                        f"\n\n⚠ AUTHOR GUIDANCE — PRIORITY INSTRUCTION:\n{chapter_brief}\n"
+                        f"You MUST incorporate this guidance. It overrides default section structure where needed."
+                    )
+                    chapter_brief = ""
+                else:
+                    show_info("Regenerating draft from scratch…")
+                draft_messages = [{"role": "user", "content": write_prompt}]
                 with LLMClient(writer_cfg) as client:
-                    draft = client.complete(writer_system, [{"role": "user", "content": write_prompt}])
+                    draft = stream_response(
+                        client.stream(writer_system, draft_messages),
+                        title=f"Chapter {chapter_num} — Draft",
+                    )
+                draft_messages.append({"role": "assistant", "content": draft})
                 draft_wc = word_count(draft)
+
                 show_info("Running AI review on new draft…")
                 review = reviewer.review_chapter(
                     chapter_num=chapter_num,
@@ -229,38 +246,57 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                     word_count=draft_wc,
                 )
                 show_review(review)
+
+                show_info("Revising based on review…")
+                revision_prompt = pipeline.build_user_prompt(
+                    "stage5_revision.txt",
+                    chapter_draft=draft,
+                    review_text=review.full_text,
+                    revision_brief=review.revision_brief,
+                    **{k: v for k, v in ctx.items() if k != "scene_brief"},
+                )
+                revision_messages = [{"role": "user", "content": revision_prompt}]
                 with LLMClient(writer_cfg) as client:
-                    revised = client.complete(writer_system, [{"role": "user", "content": revision_prompt}])
+                    revised = stream_response(
+                        client.stream(writer_system, revision_messages),
+                        title=f"Chapter {chapter_num} — Revised",
+                    )
+                revision_messages.append({"role": "assistant", "content": revised})
                 revised_wc = word_count(revised)
-                show_draft(revised, title=f"Chapter {chapter_num} (revised)", word_count=revised_wc)
                 console.print(f"[dim]Review score: {review.score}/10  |  Words: {revised_wc:,}[/dim]")
-                continue
 
             elif action == ApprovalAction.USE_REVIEW:
                 show_info("Regenerating using review as brief…")
                 use_review_prompt = (
-                    f"{write_prompt}\n\n"
+                    f"{base_write_prompt}\n\n"
                     f"IMPORTANT: A review of your previous draft identified these issues:\n"
                     f"{review.summary}\n\nRevision brief: {review.revision_brief}\n\n"
                     f"Write a new draft that fully addresses these issues."
                 )
+                use_review_messages = [{"role": "user", "content": use_review_prompt}]
                 with LLMClient(writer_cfg) as client:
-                    revised = client.complete(writer_system, [{"role": "user", "content": use_review_prompt}])
+                    revised = stream_response(
+                        client.stream(writer_system, use_review_messages),
+                        title=f"Chapter {chapter_num} — Use-Review Draft",
+                        border_style="cyan",
+                    )
+                revision_messages = [{"role": "user", "content": use_review_prompt},
+                                     {"role": "assistant", "content": revised}]
                 revised_wc = word_count(revised)
-                show_draft(revised, title=f"Chapter {chapter_num} (use-review)", word_count=revised_wc)
-                continue
+                console.print(f"[dim]Words: {revised_wc:,}[/dim]")
 
             elif action == ApprovalAction.FEEDBACK:
                 show_info("Incorporating feedback…")
+                revision_messages.append({"role": "user", "content": user_text})
                 with LLMClient(writer_cfg) as client:
-                    revised = client.complete(writer_system, [
-                        {"role": "user", "content": revision_prompt},
-                        {"role": "assistant", "content": revised},
-                        {"role": "user", "content": user_text},
-                    ])
+                    revised = stream_response(
+                        client.stream(writer_system, revision_messages),
+                        title=f"Chapter {chapter_num} — Feedback",
+                        border_style="cyan",
+                    )
+                revision_messages.append({"role": "assistant", "content": revised})
                 revised_wc = word_count(revised)
-                show_draft(revised, title=f"Chapter {chapter_num} (feedback)", word_count=revised_wc)
-                continue
+                console.print(f"[dim]Words: {revised_wc:,}[/dim]")
 
             elif action == ApprovalAction.EDIT:
                 revised = user_text

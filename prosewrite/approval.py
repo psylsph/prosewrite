@@ -31,14 +31,58 @@ _PATTERNS: list[tuple[ApprovalAction, list[str]]] = [
 ]
 
 
+# Words that don't count as "substantive content" after an action keyword
+_FILLER = {"please", "it", "this", "that", "the", "a", "an", "now", "just"}
+
+
 def _classify(text: str) -> tuple[ApprovalAction, str]:
-    """Return (action, cleaned_text). Falls back to FEEDBACK with the raw text."""
+    """
+    Return (action, cleaned_text). Falls back to FEEDBACK with the raw text.
+
+    A keyword only acts as a command when it appears at (or very near) the
+    start of the input — i.e. nothing substantive precedes it.  This prevents
+    words like "good" or "ok" embedded in a guidance sentence from being
+    mistakenly treated as APPROVE.
+
+    - REGENERATE + instruction → still REGENERATE, text carries the brief
+      e.g. "regenerate add more weapon stashes" → (REGENERATE, "add more weapon stashes")
+
+    - Other single-word keywords + trailing instruction → FEEDBACK
+      e.g. the keyword was incidental; treat whole message as directed notes.
+
+    Phrase keywords (e.g. "not right", "try again") are matched as-is.
+    """
     normalised = text.strip().lower()
     for action, keywords in _PATTERNS:
         for kw in keywords:
-            if kw in normalised:
-                return action, text.strip()
-    # Anything else is treated as directed feedback
+            if kw not in normalised:
+                continue
+
+            idx = normalised.index(kw)
+
+            # Reject if substantial content precedes the keyword — it means the
+            # keyword is embedded mid-sentence (e.g. "...would be good"), not a command.
+            before = normalised[:idx].strip()
+            before_words = [w for w in before.split() if w not in _FILLER]
+            if before_words:
+                continue
+
+            after = normalised[idx + len(kw):].strip()
+            after_words = [w for w in after.split() if w not in _FILLER]
+            is_single_word = ' ' not in kw
+
+            if is_single_word and after_words:
+                # Strip leading punctuation (e.g. the colon in "regenerate: note")
+                instruction = text.strip()[idx + len(kw):].strip().lstrip(":").strip()
+                if action == ApprovalAction.REGENERATE:
+                    return ApprovalAction.REGENERATE, instruction
+                else:
+                    return ApprovalAction.FEEDBACK, instruction or text.strip()
+
+            # Bare keyword with no trailing instruction — return empty string so
+            # stages don't mistake the keyword itself (e.g. "regenerate") for a brief.
+            return action, ""
+
     return ApprovalAction.FEEDBACK, text.strip()
 
 

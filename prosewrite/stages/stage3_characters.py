@@ -6,17 +6,12 @@ from pathlib import Path
 from ..approval import ApprovalAction, ApprovalLoop
 from ..client import LLMClient
 from ..config import resolve_stage
-from ..display import console, show_draft, show_info, show_success, show_warning, word_count
+from ..display import console, show_info, show_success, show_warning, stream_response
 from ..exceptions import StageError
 from ..state import ProjectState, save_state
 
 
 def _parse_character_names(index_text: str) -> list[str]:
-    """
-    Parse character names from a Markdown table. Returns a list of full names.
-    The first column is assumed to be the character name; header row is skipped.
-    Falls back gracefully if the table format is non-standard.
-    """
     names: list[str] = []
     in_table = False
     header_skipped = False
@@ -25,20 +20,15 @@ def _parse_character_names(index_text: str) -> list[str]:
         stripped = line.strip()
         if not stripped.startswith("|"):
             if in_table:
-                break  # table ended
+                break
             continue
-
         in_table = True
-        # Skip separator row (|---|---|)
         if re.match(r"^\|[-| :]+\|$", stripped):
             header_skipped = True
             continue
-        # Skip the header row (first non-separator pipe row)
         if not header_skipped:
             header_skipped = True
             continue
-
-        # Extract first column
         parts = [p.strip() for p in stripped.strip("|").split("|")]
         if parts and parts[0]:
             name = parts[0].strip()
@@ -49,11 +39,20 @@ def _parse_character_names(index_text: str) -> list[str]:
 
 
 def _get_index_entry(index_text: str, character_name: str) -> str:
-    """Extract a character's table row from the index."""
     for line in index_text.splitlines():
         if character_name.lower() in line.lower() and line.strip().startswith("|"):
             return line.strip()
     return f"| {character_name} | (see index) | (see index) |"
+
+
+def _with_brief(prompt: str, brief: str, context: str = "output") -> str:
+    if brief:
+        return (
+            prompt
+            + f"\n\n⚠ AUTHOR GUIDANCE — PRIORITY INSTRUCTION:\n{brief}\n"
+            f"You MUST incorporate this guidance. It overrides default section structure where needed."
+        )
+    return prompt
 
 
 def run(pipeline, state: ProjectState) -> ProjectState:
@@ -85,13 +84,23 @@ def run(pipeline, state: ProjectState) -> ProjectState:
 
     loop = ApprovalLoop()
     character_index = ""
+    messages: list[dict] = []
+    brief = ""
 
     while True:
-        show_info(f"Generating character index with {stage_cfg.model} (temp={stage_cfg.temperature})…")
-        with LLMClient(stage_cfg) as client:
-            character_index = client.complete(system, [{"role": "user", "content": base_prompt}])
+        if brief:
+            show_info(f"Regenerating character index with guidance: '{brief}'…")
+        else:
+            show_info(f"Generating character index with {stage_cfg.model} (temp={stage_cfg.temperature})…")
 
-        show_draft(character_index, title="Character Index")
+        prompt = _with_brief(base_prompt, brief, "Character Index")
+        brief = ""
+        messages = [{"role": "user", "content": prompt}]
+        with LLMClient(stage_cfg) as client:
+            character_index = stream_response(
+                client.stream(system, messages), title="Character Index"
+            )
+        messages.append({"role": "assistant", "content": character_index})
 
         names = _parse_character_names(character_index)
         if names:
@@ -102,30 +111,31 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 "Ensure the output is a Markdown table with character names in the first column."
             )
 
-        action, user_text = loop.wait("Approve index, request changes, or type 'redo'")
+        action, user_text = loop.wait(
+            "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
+        )
 
         if action == ApprovalAction.APPROVE:
             pipeline.write_file(character_index, "character_index.md")
             show_success("character_index.md saved.")
             break
         elif action == ApprovalAction.REGENERATE:
-            continue
+            brief = user_text
         elif action == ApprovalAction.FEEDBACK:
             show_info("Incorporating feedback…")
+            messages.append({"role": "user", "content": user_text})
             with LLMClient(stage_cfg) as client:
-                character_index = client.complete(system, [
-                    {"role": "user", "content": base_prompt},
-                    {"role": "assistant", "content": character_index},
-                    {"role": "user", "content": user_text},
-                ])
-            continue
+                character_index = stream_response(
+                    client.stream(system, messages), title="Character Index", border_style="cyan"
+                )
+            messages.append({"role": "assistant", "content": character_index})
         elif action == ApprovalAction.EDIT:
             character_index = user_text
             pipeline.write_file(character_index, "character_index.md")
             show_success("character_index.md saved (manual edit).")
             break
 
-    # Re-parse names after any edits
+    # Re-parse after any edits
     names = _parse_character_names(character_index)
     if not names:
         show_warning("No character names could be parsed. Prompting for manual entry.")
@@ -149,7 +159,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             character_name=name,
             character_index_entry=index_entry,
         )
-        profile_prompt = pipeline.build_user_prompt(
+        base_profile_prompt = pipeline.build_user_prompt(
             "stage3.txt",
             project_name=state.project_name,
             seed_content=seed_text,
@@ -158,15 +168,27 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             task=profile_task,
         )
 
-        while True:
-            show_info(f"Writing profile for {name}…")
-            with LLMClient(stage_cfg) as client:
-                profile = client.complete(system, [{"role": "user", "content": profile_prompt}])
+        profile_messages: list[dict] = []
+        profile_brief = ""
 
-            show_draft(profile, title=f"Character Profile — {name}", word_count=word_count(profile))
+        while True:
+            if profile_brief:
+                show_info(f"Regenerating {name}'s profile with guidance: '{profile_brief}'…")
+            else:
+                show_info(f"Writing profile for {name}…")
+
+            profile_prompt = _with_brief(base_profile_prompt, profile_brief, f"{name}'s profile")
+            profile_brief = ""
+            profile_messages = [{"role": "user", "content": profile_prompt}]
+            with LLMClient(stage_cfg) as client:
+                profile = stream_response(
+                    client.stream(system, profile_messages),
+                    title=f"Character Profile — {name}",
+                )
+            profile_messages.append({"role": "assistant", "content": profile})
 
             action, user_text = profile_loop.wait(
-                f"Approve {name}'s profile, request changes, 'redo', or 'skip'"
+                f"Discuss | 'approve' | 'regenerate: note' | 'skip'"
             )
 
             safe_name = re.sub(r"[^\w\-]", "_", name)
@@ -180,16 +202,17 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 show_info(f"Skipped {name}.")
                 break
             elif action == ApprovalAction.REGENERATE:
-                continue
+                profile_brief = user_text
             elif action == ApprovalAction.FEEDBACK:
                 show_info("Incorporating feedback…")
+                profile_messages.append({"role": "user", "content": user_text})
                 with LLMClient(stage_cfg) as client:
-                    profile = client.complete(system, [
-                        {"role": "user", "content": profile_prompt},
-                        {"role": "assistant", "content": profile},
-                        {"role": "user", "content": user_text},
-                    ])
-                continue
+                    profile = stream_response(
+                        client.stream(system, profile_messages),
+                        title=f"Character Profile — {name}",
+                        border_style="cyan",
+                    )
+                profile_messages.append({"role": "assistant", "content": profile})
             elif action == ApprovalAction.EDIT:
                 profile = user_text
                 pipeline.write_file(profile, profile_path)

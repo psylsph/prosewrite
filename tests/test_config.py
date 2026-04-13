@@ -84,7 +84,7 @@ class TestLoadConfig:
         cfg = load_config(DEFAULT_CONFIG_PATH)
         # seed_analysis overrides temperature but not model
         stage = cfg.stages["seed_analysis"]
-        assert stage.temperature == 0.3
+        assert stage.temperature == 1.0
         assert stage.model == cfg.defaults.model  # inherited
 
     def test_missing_config_raises(self, tmp_path):
@@ -104,7 +104,7 @@ class TestResolveStage:
     def test_known_stage(self):
         cfg = load_config(DEFAULT_CONFIG_PATH)
         stage = resolve_stage(cfg, "seed_analysis")
-        assert stage.temperature == 0.3
+        assert stage.temperature == 1.0
 
     def test_unknown_stage_falls_back_to_defaults(self):
         cfg = load_config(DEFAULT_CONFIG_PATH)
@@ -115,15 +115,17 @@ class TestResolveStage:
 class TestApiKey:
     def test_api_key_resolved_from_env(self):
         cfg = load_config(DEFAULT_CONFIG_PATH)
-        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "test-key-123"}):
+        key_env = cfg.defaults.api_key_env
+        with patch.dict(os.environ, {key_env: "test-key-123"}):
             assert cfg.defaults.api_key == "test-key-123"
 
     def test_missing_api_key_raises(self):
         from prosewrite.exceptions import ConfigError
         cfg = load_config(DEFAULT_CONFIG_PATH)
-        env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+        key_env = cfg.defaults.api_key_env
+        env = {k: v for k, v in os.environ.items() if k != key_env}
         with patch.dict(os.environ, env, clear=True):
-            with pytest.raises(ConfigError, match="ANTHROPIC_API_KEY"):
+            with pytest.raises(ConfigError, match=key_env):
                 _ = cfg.defaults.api_key
 
 

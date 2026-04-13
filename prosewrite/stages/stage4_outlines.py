@@ -5,7 +5,7 @@ import re
 from ..approval import ApprovalAction, ApprovalLoop
 from ..client import LLMClient
 from ..config import resolve_stage
-from ..display import console, show_draft, show_info, show_review, show_success, show_warning, word_count
+from ..display import console, show_info, show_review, show_success, show_warning, stream_response, word_count
 from ..exceptions import StageError
 from ..reviewer import AIReviewer
 from ..state import ProjectState, save_state
@@ -19,7 +19,6 @@ def _parse_chapter_list(chapter_list_text: str) -> list[tuple[int, str]]:
     Expects a Markdown table with # as first column, Title as second.
     """
     chapters: list[tuple[int, str]] = []
-    header_seen = False
     separator_seen = False
 
     for line in chapter_list_text.splitlines():
@@ -30,7 +29,6 @@ def _parse_chapter_list(chapter_list_text: str) -> list[tuple[int, str]]:
             separator_seen = True
             continue
         if not separator_seen:
-            header_seen = True
             continue
         parts = [p.strip() for p in stripped.strip("|").split("|")]
         if len(parts) >= 2:
@@ -52,6 +50,16 @@ def _get_chapter_list_entry(chapter_list_text: str, chapter_num: int) -> str:
             if parts and re.sub(r"\D", "", parts[0]) == str(chapter_num):
                 return line.strip()
     return f"| {chapter_num} | Chapter {chapter_num} | ... |"
+
+
+def _with_brief(prompt: str, brief: str, context: str = "output") -> str:
+    if brief:
+        return (
+            prompt
+            + f"\n\n⚠ AUTHOR GUIDANCE — PRIORITY INSTRUCTION:\n{brief}\n"
+            f"You MUST incorporate this guidance. It overrides default section structure where needed."
+        )
+    return prompt
 
 
 def run(pipeline, state: ProjectState) -> ProjectState:
@@ -82,7 +90,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         "stage4_list_task.txt",
         total_chapters=str(total_chapters),
     )
-    list_prompt = pipeline.build_user_prompt(
+    base_list_prompt = pipeline.build_user_prompt(
         "stage4.txt",
         project_name=state.project_name,
         story_bible_content=story_bible,
@@ -94,22 +102,36 @@ def run(pipeline, state: ProjectState) -> ProjectState:
     loop = ApprovalLoop()
     chapter_list_text = ""
     chapters: list[tuple[int, str]] = []
+    messages: list[dict] = []
+    brief = ""
 
     while True:
-        show_info(f"Generating chapter list with {stage_cfg.model}…")
+        if brief:
+            show_info(f"Regenerating chapter list with guidance: '{brief}'…")
+        else:
+            show_info(f"Generating chapter list with {stage_cfg.model} (temp={stage_cfg.temperature})…")
+
+        prompt = _with_brief(base_list_prompt, brief, "Chapter List")
+        brief = ""
+        messages = [{"role": "user", "content": prompt}]
         with LLMClient(stage_cfg) as client:
-            chapter_list_text = client.complete(system, [{"role": "user", "content": list_prompt}])
+            chapter_list_text = stream_response(
+                client.stream(system, messages), title="Chapter List"
+            )
+        messages.append({"role": "assistant", "content": chapter_list_text})
 
         chapters = _parse_chapter_list(chapter_list_text)
-        show_draft(chapter_list_text, title=f"Chapter List ({len(chapters)} chapters)")
-
+        if chapters:
+            console.print(f"[dim]Parsed {len(chapters)} chapters.[/dim]")
         if len(chapters) != total_chapters:
             show_warning(
                 f"Expected {total_chapters} chapters but parsed {len(chapters)}. "
                 "Check the table format before approving."
             )
 
-        action, user_text = loop.wait("Approve chapter list, request changes, or 'redo'")
+        action, user_text = loop.wait(
+            "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
+        )
 
         if action == ApprovalAction.APPROVE:
             pipeline.write_file(chapter_list_text, "chapter_outlines/chapter_list.md")
@@ -117,16 +139,15 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             chapters = _parse_chapter_list(chapter_list_text) or [(i, f"Chapter {i}") for i in range(1, total_chapters + 1)]
             break
         elif action == ApprovalAction.REGENERATE:
-            continue
+            brief = user_text
         elif action == ApprovalAction.FEEDBACK:
             show_info("Incorporating feedback…")
+            messages.append({"role": "user", "content": user_text})
             with LLMClient(stage_cfg) as client:
-                chapter_list_text = client.complete(system, [
-                    {"role": "user", "content": list_prompt},
-                    {"role": "assistant", "content": chapter_list_text},
-                    {"role": "user", "content": user_text},
-                ])
-            continue
+                chapter_list_text = stream_response(
+                    client.stream(system, messages), title="Chapter List", border_style="cyan"
+                )
+            messages.append({"role": "assistant", "content": chapter_list_text})
         elif action == ApprovalAction.EDIT:
             chapter_list_text = user_text
             pipeline.write_file(chapter_list_text, "chapter_outlines/chapter_list.md")
@@ -160,7 +181,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             macro_summary=macro_summary or "(no summary yet — this is an early chapter)",
             character_profiles="(see character profiles in characters/ directory)",
         )
-        outline_prompt = pipeline.build_user_prompt(
+        base_outline_prompt = pipeline.build_user_prompt(
             "stage4.txt",
             project_name=state.project_name,
             story_bible_content=story_bible,
@@ -169,10 +190,25 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             task=outline_task,
         )
 
+        outline_messages: list[dict] = []
+        outline_brief = ""
+        outline = ""
+
         while True:
-            show_info(f"Generating outline for Chapter {chapter_num}…")
+            if outline_brief:
+                show_info(f"Regenerating Chapter {chapter_num} outline with guidance: '{outline_brief}'…")
+            else:
+                show_info(f"Generating outline for Chapter {chapter_num}…")
+
+            outline_prompt = _with_brief(base_outline_prompt, outline_brief, f"Chapter {chapter_num} outline")
+            outline_brief = ""
+            outline_messages = [{"role": "user", "content": outline_prompt}]
             with LLMClient(stage_cfg) as client:
-                outline = client.complete(system, [{"role": "user", "content": outline_prompt}])
+                outline = stream_response(
+                    client.stream(system, outline_messages),
+                    title=f"Chapter {chapter_num} Outline — {chapter_title}",
+                )
+            outline_messages.append({"role": "assistant", "content": outline})
 
             # Inline AI review
             show_info("Running outline review…")
@@ -182,10 +218,8 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             if review.score < _LOW_SCORE_THRESHOLD:
                 show_warning(f"Review score {review.score}/10 is below threshold. Consider requesting changes.")
 
-            show_draft(outline, title=f"Chapter {chapter_num} Outline — {chapter_title}", word_count=word_count(outline))
-
             action, user_text = outline_loop.wait(
-                f"Approve outline, request changes, 'redo', 'use review', or 'skip'"
+                "Discuss | 'approve' | 'regenerate: note' | 'use review' | 'skip'"
             )
 
             outline_path = f"chapter_outlines/chapter_{chapter_num}_outline.md"
@@ -200,25 +234,30 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 show_info(f"Chapter {chapter_num} outline skipped.")
                 break
             elif action == ApprovalAction.REGENERATE:
-                continue
+                outline_brief = user_text
             elif action == ApprovalAction.USE_REVIEW:
                 show_info("Regenerating using review as brief…")
+                outline_messages.append({
+                    "role": "user",
+                    "content": f"Please revise based on this review:\n{review.full_text}",
+                })
                 with LLMClient(stage_cfg) as client:
-                    outline = client.complete(system, [
-                        {"role": "user", "content": outline_prompt},
-                        {"role": "assistant", "content": outline},
-                        {"role": "user", "content": f"Please revise based on this review:\n{review.full_text}"},
-                    ])
-                continue
+                    outline = stream_response(
+                        client.stream(system, outline_messages),
+                        title=f"Chapter {chapter_num} Outline — {chapter_title}",
+                        border_style="cyan",
+                    )
+                outline_messages.append({"role": "assistant", "content": outline})
             elif action == ApprovalAction.FEEDBACK:
                 show_info("Incorporating feedback…")
+                outline_messages.append({"role": "user", "content": user_text})
                 with LLMClient(stage_cfg) as client:
-                    outline = client.complete(system, [
-                        {"role": "user", "content": outline_prompt},
-                        {"role": "assistant", "content": outline},
-                        {"role": "user", "content": user_text},
-                    ])
-                continue
+                    outline = stream_response(
+                        client.stream(system, outline_messages),
+                        title=f"Chapter {chapter_num} Outline — {chapter_title}",
+                        border_style="cyan",
+                    )
+                outline_messages.append({"role": "assistant", "content": outline})
             elif action == ApprovalAction.EDIT:
                 outline = user_text
                 pipeline.write_file(outline, outline_path)

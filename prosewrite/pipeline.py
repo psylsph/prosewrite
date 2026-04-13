@@ -54,14 +54,33 @@ class Pipeline:
         self.project_dir = project_dir
         self.prompts_dir = cfg.prompts_dir
 
+    _ISSUES_FILE = "outstanding_issues.md"
+    # Stages that should NOT receive the outstanding issues injection
+    _NO_ISSUES_STAGES = {"seed_analysis", "export"}
+
     def build_system_prompt(self, stage_name: str) -> str:
-        """Build the system prompt: persona template + stage-specific additions."""
+        """Build the system prompt: persona template + outstanding issues (where relevant)."""
         persona_template = _load_prompt(self.prompts_dir, "system_persona.txt")
         system = _fill(
             persona_template,
             persona_name=self.cfg.persona.name,
             persona_description=self.cfg.persona.description,
         )
+
+        if stage_name not in self._NO_ISSUES_STAGES:
+            issues_path = self.project_dir / self._ISSUES_FILE
+            if issues_path.exists():
+                issues_text = issues_path.read_text(encoding="utf-8").strip()
+                if issues_text:
+                    system += (
+                        "\n\n---\n"
+                        "OUTSTANDING ISSUES FROM SEED ANALYSIS\n"
+                        "These issues were raised during the initial story analysis and not yet fully "
+                        "resolved. Watch for opportunities to address them naturally in your output. "
+                        "Do not force them — but when they are relevant, engage with them directly.\n\n"
+                        + issues_text
+                    )
+
         return system
 
     def build_user_prompt(self, filename: str, **kwargs: str) -> str:
