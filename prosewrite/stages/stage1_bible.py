@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 
-from ..approval import ApprovalAction, ApprovalLoop
+import questionary
+
+from ..approval import ApprovalAction, ApprovalLoop, _STYLE
 from ..client import LLMClient
 from ..config import resolve_stage
 from ..display import show_info, show_success, show_warning, stream_response, word_count
@@ -70,17 +72,15 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 "You will be prompted to confirm the chapter count after approval."
             )
 
-        action, user_text = loop.wait(
-            "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
-        )
+        action, user_text = loop.wait("Story Bible")
 
         if action == ApprovalAction.APPROVE:
             pipeline.write_file(bible, "story_bible.md")
             show_success("story_bible.md saved.")
 
             if chapter_count is None:
-                from rich.prompt import IntPrompt
-                chapter_count = IntPrompt.ask("How many chapters does this novel have?")
+                raw = questionary.text("How many chapters does this novel have?", style=_STYLE).ask() or "0"
+                chapter_count = int(raw.strip()) if raw.strip().isdigit() else 0
 
             state.settings.total_chapters = chapter_count
             state.current_stage = "stage2_world"
@@ -104,8 +104,8 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             bible = user_text
             chapter_count = _extract_chapter_count(bible)
             if chapter_count is None:
-                from rich.prompt import IntPrompt
-                chapter_count = IntPrompt.ask("How many chapters does this novel have?")
+                raw = questionary.text("How many chapters does this novel have?", style=_STYLE).ask() or "0"
+                chapter_count = int(raw.strip()) if raw.strip().isdigit() else 0
             pipeline.write_file(bible, "story_bible.md")
             state.settings.total_chapters = chapter_count
             state.current_stage = "stage2_world"

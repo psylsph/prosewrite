@@ -1,12 +1,24 @@
 from __future__ import annotations
 
-import re
 from enum import Enum, auto
 
+import questionary
+from questionary import Style
 from rich.console import Console
-from rich.prompt import Prompt
 
 console = Console()
+
+# Questionary style that matches Rich's dim/cyan palette
+_STYLE = Style([
+    ("qmark",        "fg:#5fd7ff bold"),
+    ("question",     "bold"),
+    ("answer",       "fg:#5fd7ff bold"),
+    ("pointer",      "fg:#5fd7ff bold"),
+    ("highlighted",  "fg:#5fd7ff bold"),
+    ("selected",     "fg:#afffff"),
+    ("separator",    "fg:#555555"),
+    ("instruction",  "fg:#555555"),
+])
 
 
 class ApprovalAction(Enum):
@@ -19,113 +31,96 @@ class ApprovalAction(Enum):
     USE_REVIEW = auto()
 
 
-# Keywords that map to each action (checked in order, case-insensitive)
-_PATTERNS: list[tuple[ApprovalAction, list[str]]] = [
-    (ApprovalAction.APPROVE_ALL, ["approve all", "approve remaining", "auto approve",
-                                  "auto-approve", "approve rest"]),
-    (ApprovalAction.APPROVE,     ["yes", "good", "looks great", "approve", "next", "perfect",
-                                  "great", "ok", "okay", "done", "ship it", "lgtm"]),
-    (ApprovalAction.REGENERATE,  ["redo", "again", "not right", "regenerate", "try again",
-                                  "start over", "redo", "rewrite", "no good", "nope"]),
-    (ApprovalAction.USE_REVIEW,  ["use review", "apply review", "use the review", "apply the review"]),
-    (ApprovalAction.EDIT,        ["i'll edit", "ill edit", "editing myself", "i will edit",
-                                  "let me edit", "i'll do it", "manual edit"]),
-    (ApprovalAction.SKIP,        ["skip"]),
-]
-
-
-# Words that don't count as "substantive content" after an action keyword
-_FILLER = {"please", "it", "this", "that", "the", "a", "an", "now", "just"}
-
-
-def _classify(text: str) -> tuple[ApprovalAction, str]:
-    """
-    Return (action, cleaned_text). Falls back to FEEDBACK with the raw text.
-
-    A keyword only acts as a command when it appears at (or very near) the
-    start of the input — i.e. nothing substantive precedes it.  This prevents
-    words like "good" or "ok" embedded in a guidance sentence from being
-    mistakenly treated as APPROVE.
-
-    - REGENERATE + instruction → still REGENERATE, text carries the brief
-      e.g. "regenerate add more weapon stashes" → (REGENERATE, "add more weapon stashes")
-
-    - Other single-word keywords + trailing instruction → FEEDBACK
-      e.g. the keyword was incidental; treat whole message as directed notes.
-
-    Phrase keywords (e.g. "not right", "try again") are matched as-is.
-    """
-    normalised = text.strip().lower()
-    for action, keywords in _PATTERNS:
-        for kw in keywords:
-            if kw not in normalised:
-                continue
-
-            idx = normalised.index(kw)
-
-            # Reject if substantial content precedes the keyword — it means the
-            # keyword is embedded mid-sentence (e.g. "...would be good"), not a command.
-            before = normalised[:idx].strip()
-            before_words = [w for w in before.split() if w not in _FILLER]
-            if before_words:
-                continue
-
-            after = normalised[idx + len(kw):].strip()
-            after_words = [w for w in after.split() if w not in _FILLER]
-            is_single_word = ' ' not in kw
-
-            if is_single_word and after_words:
-                # Strip leading punctuation (e.g. the colon in "regenerate: note")
-                instruction = text.strip()[idx + len(kw):].strip().lstrip(":").strip()
-                if action == ApprovalAction.REGENERATE:
-                    return ApprovalAction.REGENERATE, instruction
-                else:
-                    return ApprovalAction.FEEDBACK, instruction or text.strip()
-
-            # Bare keyword with no trailing instruction — return empty string so
-            # stages don't mistake the keyword itself (e.g. "regenerate") for a brief.
-            return action, ""
-
-    return ApprovalAction.FEEDBACK, text.strip()
-
-
 class ApprovalLoop:
     """
-    Presents generated content to the user and waits for a decision.
-    Reads free text and maps it to an ApprovalAction without re-printing options.
+    Presents a questionary selection menu and returns the chosen action.
+
+    Parameters
+    ----------
+    allow_skip       : show a "Skip" option
+    allow_approve_all: show an "Approve all remaining" option
+    allow_use_review : show an "Apply review feedback" option
     """
 
-    def __init__(self, allow_skip: bool = False):
+    def __init__(
+        self,
+        allow_skip: bool = False,
+        allow_approve_all: bool = False,
+        allow_use_review: bool = False,
+    ):
         self._allow_skip = allow_skip
+        self._allow_approve_all = allow_approve_all
+        self._allow_use_review = allow_use_review
 
-    def wait(self, prompt_hint: str = "") -> tuple[ApprovalAction, str]:
+    def wait(self, context: str = "") -> tuple[ApprovalAction, str]:
         """
-        Block until the user enters a decision. Returns (action, user_text).
-        user_text is the raw input — useful when action is FEEDBACK or EDIT.
+        Show the action menu and collect any required follow-up text.
+        Returns (action, text) where text is non-empty for REGENERATE (brief),
+        FEEDBACK (message), and EDIT (pasted content).
         """
-        hint = prompt_hint or "Your call"
-        while True:
-            raw = Prompt.ask(f"\n[bold cyan]{hint}[/bold cyan]")
-            if not raw.strip():
-                continue
+        choices = self._build_choices()
 
-            action, text = _classify(raw)
+        print()  # blank line before the menu
+        selected = questionary.select(
+            context or "What would you like to do?",
+            choices=choices,
+            style=_STYLE,
+            use_shortcuts=False,
+        ).ask()
 
-            if action == ApprovalAction.SKIP and not self._allow_skip:
-                console.print("[dim]Skip is not available at this stage.[/dim]")
-                continue
+        if selected is None:
+            # Ctrl-C / interrupted — treat as keyboard interrupt
+            raise KeyboardInterrupt
 
-            if action == ApprovalAction.EDIT:
-                console.print(
-                    "[dim]Paste your edited version below. "
-                    "Enter a line with just [bold]END[/bold] when done.[/dim]"
-                )
-                lines: list[str] = []
-                while True:
-                    line = input()
-                    if line.strip() == "END":
-                        break
-                    lines.append(line)
-                return ApprovalAction.EDIT, "\n".join(lines)
+        if selected == "_regenerate_guided":
+            guidance = questionary.text(
+                "Guidance for this regeneration:",
+                style=_STYLE,
+            ).ask()
+            return ApprovalAction.REGENERATE, (guidance or "").strip()
 
-            return action, text
+        if selected == ApprovalAction.FEEDBACK:
+            message = questionary.text(
+                "Your feedback:",
+                style=_STYLE,
+            ).ask()
+            return ApprovalAction.FEEDBACK, (message or "").strip()
+
+        if selected == ApprovalAction.EDIT:
+            console.print(
+                "[dim]Paste your edited version below. "
+                "Enter a line containing only [bold]END[/bold] when done.[/dim]"
+            )
+            lines: list[str] = []
+            while True:
+                line = input()
+                if line.strip() == "END":
+                    break
+                lines.append(line)
+            return ApprovalAction.EDIT, "\n".join(lines)
+
+        return selected, ""
+
+    def _build_choices(self) -> list[questionary.Choice]:
+        choices: list[questionary.Choice] = [
+            questionary.Choice("Approve", value=ApprovalAction.APPROVE),
+        ]
+        if self._allow_approve_all:
+            choices.append(
+                questionary.Choice("Approve all remaining (auto)", value=ApprovalAction.APPROVE_ALL)
+            )
+        choices += [
+            questionary.Choice("Regenerate  (fresh start)", value=ApprovalAction.REGENERATE),
+            questionary.Choice("Regenerate with guidance…", value="_regenerate_guided"),
+            questionary.Choice("Discuss / give feedback…",  value=ApprovalAction.FEEDBACK),
+            questionary.Choice("Edit manually",              value=ApprovalAction.EDIT),
+        ]
+        if self._allow_use_review:
+            choices.append(
+                questionary.Choice("Apply AI review feedback", value=ApprovalAction.USE_REVIEW)
+            )
+        if self._allow_skip:
+            choices.append(
+                questionary.Choice("Skip", value=ApprovalAction.SKIP)
+            )
+        return choices

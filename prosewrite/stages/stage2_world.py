@@ -45,9 +45,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             world = stream_response(client.stream(system, messages), title="World Guide")
         messages.append({"role": "assistant", "content": world})
 
-        action, user_text = loop.wait(
-            "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
-        )
+        action, user_text = loop.wait("World Guide")
 
         if action == ApprovalAction.APPROVE:
             pipeline.write_file(world, "world.md")

@@ -2,11 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from rich.markdown import Markdown
-from rich.panel import Panel
-from rich.prompt import Prompt
+import questionary
 
-from ..approval import ApprovalAction, ApprovalLoop
+from ..approval import ApprovalAction, ApprovalLoop, _STYLE
 from ..client import LLMClient
 from ..config import resolve_stage
 from ..display import console, show_info, show_success, stream_response, word_count
@@ -109,9 +107,7 @@ def _run_analysis(pipeline, state: ProjectState, seed_text: str, stage_cfg, syst
     pipeline.write_file(analysis, "seed_analysis.md")
 
     while True:
-        action, user_text = loop.wait(
-            "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
-        )
+        action, user_text = loop.wait("Seed Analysis")
 
         if action == ApprovalAction.APPROVE:
             if len(messages) > 2:
@@ -123,7 +119,7 @@ def _run_analysis(pipeline, state: ProjectState, seed_text: str, stage_cfg, syst
                     )
                 messages.append({"role": "assistant", "content": analysis})
                 pipeline.write_file(analysis, "seed_analysis.md")
-                action2, text2 = loop.wait("Approve this final version, or keep discussing")
+                action2, text2 = loop.wait("Final Seed Analysis")
                 if action2 == ApprovalAction.FEEDBACK:
                     messages.append({"role": "user", "content": text2})
                     with LLMClient(stage_cfg) as client:
@@ -156,10 +152,8 @@ def _run_analysis(pipeline, state: ProjectState, seed_text: str, stage_cfg, syst
             messages.append({"role": "assistant", "content": question})
 
             # Step 2 — get the author's answer
-            # Loop until we get real input; a bare newline can be buffered
-            # after Live exits and cause Prompt.ask to return immediately.
             while True:
-                answer = Prompt.ask("[bold green]You[/bold green]").strip()
+                answer = (questionary.text("You", style=_STYLE).ask() or "").strip()
                 if answer:
                     break
             messages.append({"role": "user", "content": answer})
@@ -189,8 +183,8 @@ def _run_improvement(pipeline, seed_text: str, analysis_text: str, stage_cfg, sy
     console.print("[bold]Seed Improvement Session[/bold]")
     console.print(
         "[dim]The AI will ask focused questions to develop your premise. "
-        "Say 'write it' or 'apply' when ready to generate the updated seed. "
-        "Say 'cancel' to exit without changes.[/dim]\n"
+        "Type your thoughts freely. When ready to generate the updated seed, "
+        "choose 'Generate updated seed' from the menu.[/dim]\n"
     )
 
     kickoff = pipeline.build_user_prompt(
@@ -207,17 +201,27 @@ def _run_improvement(pipeline, seed_text: str, analysis_text: str, stage_cfg, sy
     messages.append({"role": "assistant", "content": reply})
 
     while True:
-        raw = Prompt.ask("[bold green]You[/bold green]")
-        if not raw.strip():
-            continue
+        action = questionary.select(
+            "Your move",
+            choices=[
+                questionary.Choice("Continue the conversation…", value="chat"),
+                questionary.Choice("Generate updated seed now", value="apply"),
+                questionary.Choice("Cancel — return without changes", value="cancel"),
+            ],
+            style=_STYLE,
+        ).ask()
 
-        if raw.strip().lower() in ("cancel", "quit", "exit", "back"):
+        if action is None or action == "cancel":
             console.print("[dim]Improvement session cancelled.[/dim]")
             return None
 
-        if _is_apply_signal(raw):
-            return _generate_proposed_seed(messages, raw, stage_cfg, system)
+        if action == "apply":
+            return _generate_proposed_seed(messages, "Let's write the updated seed now.", stage_cfg, system)
 
+        # "chat" — get the user's message then continue
+        raw = (questionary.text("You", style=_STYLE).ask() or "").strip()
+        if not raw:
+            continue
         messages.append({"role": "user", "content": raw})
         with LLMClient(stage_cfg) as client:
             reply = stream_response(
@@ -247,21 +251,29 @@ def _generate_proposed_seed(
     messages.append({"role": "assistant", "content": decisions})
 
     # Step 2 — author confirms or corrects
-    raw = Prompt.ask(
-        "[bold cyan]Confirm, correct anything, or type 'cancel'[/bold cyan]"
-    ).strip()
+    confirm_action = questionary.select(
+        "Confirm these changes before writing?",
+        choices=[
+            questionary.Choice("Confirm — write the seed", value="confirm"),
+            questionary.Choice("Make a correction first…",  value="correct"),
+            questionary.Choice("Cancel — return to conversation", value="cancel"),
+        ],
+        style=_STYLE,
+    ).ask()
 
-    if raw.lower() in ("cancel", "quit", "back", "no"):
+    if confirm_action is None or confirm_action == "cancel":
         console.print("[dim]Seed generation cancelled. Returning to conversation.[/dim]")
         return None
 
-    if raw.lower() not in ("yes", "good", "confirm", "ok", "correct", "looks good", "go", "approved"):
-        messages.append({"role": "user", "content": f"One correction before we write: {raw}"})
-        with LLMClient(stage_cfg) as client:
-            ack = stream_response(
-                client.stream(system, messages), title="Evelyn", border_style="cyan"
-            )
-        messages.append({"role": "assistant", "content": ack})
+    if confirm_action == "correct":
+        correction = (questionary.text("Your correction", style=_STYLE).ask() or "").strip()
+        if correction:
+            messages.append({"role": "user", "content": f"One correction before we write: {correction}"})
+            with LLMClient(stage_cfg) as client:
+                ack = stream_response(
+                    client.stream(system, messages), title="Evelyn", border_style="cyan"
+                )
+            messages.append({"role": "assistant", "content": ack})
 
     # Step 3 — write the seed
     show_info("Writing updated seed…")
@@ -279,34 +291,31 @@ def _approve_proposed_seed(new_seed: str) -> str | None:
     Ask for approval of the proposed seed (already displayed by stream_response).
     Returns the approved seed text (may be hand-edited), or None to redo.
     """
-    console.print(
-        "\n[bold]Accept this seed?[/bold]  "
-        "[cyan]approve[/cyan] / [cyan]edit[/cyan] / [cyan]redo[/cyan] (restart improvement)"
-    )
+    action = questionary.select(
+        "Accept this seed?",
+        choices=[
+            questionary.Choice("Approve — save this seed", value="approve"),
+            questionary.Choice("Edit manually",             value="edit"),
+            questionary.Choice("Redo — restart improvement", value="redo"),
+        ],
+        style=_STYLE,
+    ).ask()
 
+    if action is None or action == "redo":
+        return None
+
+    if action == "approve":
+        return new_seed
+
+    # edit
+    console.print("[dim]Paste your edited seed. Enter a line containing only END when done.[/dim]")
+    lines: list[str] = []
     while True:
-        raw = Prompt.ask("[bold cyan]>[/bold cyan]").strip().lower()
-
-        if raw in ("approve", "yes", "good", "accept", "save", "looks good"):
-            return new_seed
-
-        elif raw.startswith("edit"):
-            console.print(
-                "[dim]Paste your edited seed. Enter a line with just [bold]END[/bold] when done.[/dim]"
-            )
-            lines: list[str] = []
-            while True:
-                line = input()
-                if line.strip() == "END":
-                    break
-                lines.append(line)
-            return "\n".join(lines)
-
-        elif raw in ("redo", "again", "restart", "no"):
-            return None
-
-        else:
-            console.print("[dim]Type 'approve', 'edit', or 'redo'.[/dim]")
+        line = input()
+        if line.strip() == "END":
+            break
+        lines.append(line)
+    return "\n".join(lines)
 
 
 # ── Outstanding issues extraction ────────────────────────────────────────────
@@ -382,15 +391,16 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         show_success("seed_analysis.md saved.")
 
         # ── Decision point: improve or move on ───────────────────────────────
-        console.print()
-        console.print(
-            "[bold]What next?[/bold]  "
-            "[cyan]improve[/cyan] — work on the seed  |  "
-            "[cyan]approve[/cyan] — move to Story Bible"
-        )
-        choice = Prompt.ask("[bold cyan]>[/bold cyan]").strip().lower()
+        choice = questionary.select(
+            "What next?",
+            choices=[
+                questionary.Choice("Approve — move to Story Bible", value="approve"),
+                questionary.Choice("Improve the seed further",       value="improve"),
+            ],
+            style=_STYLE,
+        ).ask()
 
-        if choice in ("approve", "yes", "next", "move on", "continue", "done", "good"):
+        if choice == "approve" or choice is None:
             _extract_outstanding_issues(pipeline, seed_text, analysis, stage_cfg, system)
             state.current_stage = "stage1_bible"
             save_state(state, pipeline.project_dir)
@@ -402,14 +412,15 @@ def run(pipeline, state: ProjectState) -> ProjectState:
 
             if new_seed is None:
                 # Cancelled — offer the choice again without re-analysing
-                console.print()
-                console.print(
-                    "[bold]What next?[/bold]  "
-                    "[cyan]improve[/cyan] — try again  |  "
-                    "[cyan]approve[/cyan] — move to Story Bible"
-                )
-                choice = Prompt.ask("[bold cyan]>[/bold cyan]").strip().lower()
-                if choice in ("approve", "yes", "next", "move on", "continue", "done", "good"):
+                choice = questionary.select(
+                    "What next?",
+                    choices=[
+                        questionary.Choice("Approve — move to Story Bible", value="approve"),
+                        questionary.Choice("Try improvement again",          value="improve"),
+                    ],
+                    style=_STYLE,
+                ).ask()
+                if choice == "approve" or choice is None:
                     _extract_outstanding_issues(pipeline, seed_text, analysis, stage_cfg, system)
                     state.current_stage = "stage1_bible"
                     save_state(state, pipeline.project_dir)

@@ -118,7 +118,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
     reviewer = AIReviewer(pipeline)
 
     approved = set(state.progress.approved_chapters)
-    chapter_loop = ApprovalLoop(allow_skip=True)
+    chapter_loop = ApprovalLoop(allow_skip=True, allow_use_review=True)
 
     for chapter_num in range(0, total_chapters + 1):
         if chapter_num in approved:
@@ -196,9 +196,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         chapter_brief = ""
 
         while True:
-            action, user_text = chapter_loop.wait(
-                "Discuss | 'approve' | 'regenerate: note' | 'use review' | 'skip'"
-            )
+            action, user_text = chapter_loop.wait(f"Chapter {chapter_num}")
             chapter_path = f"chapters/chapter_{chapter_num}.md"
 
             if action == ApprovalAction.APPROVE:

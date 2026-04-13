@@ -3,7 +3,9 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from ..approval import ApprovalAction, ApprovalLoop
+import questionary
+
+from ..approval import ApprovalAction, ApprovalLoop, _STYLE
 from ..client import LLMClient
 from ..config import resolve_stage
 from ..display import console, show_info, show_success, show_warning, stream_response
@@ -111,9 +113,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 "Ensure the output is a Markdown table with character names in the first column."
             )
 
-        action, user_text = loop.wait(
-            "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
-        )
+        action, user_text = loop.wait("Character Index")
 
         if action == ApprovalAction.APPROVE:
             pipeline.write_file(character_index, "character_index.md")
@@ -139,8 +139,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
     names = _parse_character_names(character_index)
     if not names:
         show_warning("No character names could be parsed. Prompting for manual entry.")
-        from rich.prompt import Prompt
-        raw = Prompt.ask("Enter character names separated by commas")
+        raw = questionary.text("Enter character names separated by commas", style=_STYLE).ask() or ""
         names = [n.strip() for n in raw.split(",") if n.strip()]
 
     # -----------------------------------------------------------------------
@@ -187,9 +186,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 )
             profile_messages.append({"role": "assistant", "content": profile})
 
-            action, user_text = profile_loop.wait(
-                f"Discuss | 'approve' | 'regenerate: note' | 'skip'"
-            )
+            action, user_text = profile_loop.wait(f"Character Profile — {name}")
 
             safe_name = re.sub(r"[^\w\-]", "_", name)
             profile_path = f"characters/{safe_name}.md"

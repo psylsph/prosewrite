@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import re
 
-from ..approval import ApprovalAction, ApprovalLoop
+import questionary
+
+from ..approval import ApprovalAction, ApprovalLoop, _STYLE
 from ..client import LLMClient
 from ..config import resolve_stage
 from ..display import console, show_info, show_review, show_success, show_warning, stream_response, word_count
@@ -88,8 +90,8 @@ def run(pipeline, state: ProjectState) -> ProjectState:
 
     total_chapters = state.settings.total_chapters
     if total_chapters == 0:
-        from rich.prompt import IntPrompt
-        total_chapters = IntPrompt.ask("How many chapters does this novel have?")
+        raw = questionary.text("How many chapters does this novel have?", style=_STYLE).ask() or "0"
+        total_chapters = int(raw.strip()) if raw.strip().isdigit() else 0
         state.settings.total_chapters = total_chapters
 
     stage_cfg = resolve_stage(pipeline.cfg, "chapter_outlines")
@@ -130,9 +132,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         chapters = _parse_chapter_list(chapter_list_text)
         show_info(f"Loaded existing chapter_list.md ({len(chapters)} chapters found).")
         stream_response(iter([chapter_list_text]), title="Chapter List (existing)")
-        action, user_text = loop.wait(
-            "Keep this list ('approve') | 'regenerate' to rewrite | 'regenerate: your note'"
-        )
+        action, user_text = loop.wait("Chapter List (existing)")
         if action == ApprovalAction.APPROVE:
             need_generation = False
         elif action == ApprovalAction.EDIT:
@@ -169,9 +169,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                     "The output may have been cut short — consider regenerating or approving and editing."
                 )
 
-            action, user_text = loop.wait(
-                "Discuss | 'approve' | 'regenerate' for fresh start | 'regenerate: your note' to rewrite with guidance"
-            )
+            action, user_text = loop.wait("Chapter List")
 
             if action == ApprovalAction.APPROVE:
                 pipeline.write_file(chapter_list_text, "chapter_outlines/chapter_list.md")
@@ -201,7 +199,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
     console.print(f"\n[bold]Step 4b — Chapter Outlines ({len(chapters)} chapters)[/bold]")
 
     already_approved = set(state.progress.approved_outlines)
-    outline_loop = ApprovalLoop(allow_skip=True)
+    outline_loop = ApprovalLoop(allow_skip=True, allow_approve_all=True, allow_use_review=True)
 
     macro_summary = pipeline.read_file("summaries/macro.md")
     approve_all = False
@@ -339,9 +337,7 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             if review.score < _LOW_SCORE_THRESHOLD:
                 show_warning(f"Review score {review.score}/10 is below threshold. Consider requesting changes.")
 
-            action, user_text = outline_loop.wait(
-                "Discuss | 'approve' | 'approve all' | 'regenerate: note' | 'use review' | 'skip'"
-            )
+            action, user_text = outline_loop.wait(f"Chapter {chapter_num} — {chapter_title}")
 
             if action == ApprovalAction.APPROVE:
                 pipeline.write_file(outline, outline_path)
