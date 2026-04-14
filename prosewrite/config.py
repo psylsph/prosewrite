@@ -48,6 +48,7 @@ class StyleConfig:
 @dataclass
 class ProjectConfig:
     name: str
+    author: str
     output_dir: str
     defaults: StageSettings
     stages: dict[str, StageSettings]
@@ -112,6 +113,7 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> ProjectConfig:
 
     return ProjectConfig(
         name=raw_project.get("name", "my_novel"),
+        author=raw_project.get("author", ""),
         output_dir=raw_project.get("output_dir", "projects"),
         defaults=defaults,
         stages=stages,
