@@ -18,7 +18,9 @@ app = typer.Typer(
 )
 console = Console()
 
-_DEFAULT_CONFIG = typer.Option(str(DEFAULT_CONFIG_PATH), "--config", help="Path to config.toml")
+_DEFAULT_CONFIG = typer.Option(
+    str(DEFAULT_CONFIG_PATH), "--config", help="Path to config.toml"
+)
 
 
 def _get_project_dir(config_path: Path, project_name: str) -> Path:
@@ -31,9 +33,12 @@ def _get_project_dir(config_path: Path, project_name: str) -> Path:
 # new
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def new(
-    name: str = typer.Option(..., "--name", help="Project name (used as directory name)."),
+    name: str = typer.Option(
+        ..., "--name", help="Project name (used as directory name)."
+    ),
     seed: Path = typer.Option(..., "--seed", help="Path to seed.md file."),
     config: Path = _DEFAULT_CONFIG,
 ) -> None:
@@ -46,7 +51,9 @@ def new(
 
     project_dir = Path(cfg.output_dir) / name
     if project_dir.exists():
-        console.print(f"[yellow]Project '{name}' already exists at {project_dir}.[/yellow]")
+        console.print(
+            f"[yellow]Project '{name}' already exists at {project_dir}.[/yellow]"
+        )
         console.print("Use [bold]prosewrite resume[/bold] to continue it.")
         raise typer.Exit(1)
 
@@ -60,18 +67,22 @@ def new(
 
     shutil.copy(seed, project_dir / "seed.md")
 
-    state = new_state(name, config_style={
-        "pov": cfg.style.pov,
-        "tense": cfg.style.tense,
-        "genre": cfg.style.genre,
-        "min_words": cfg.style.min_words,
-    })
+    state = new_state(
+        name,
+        config_style={
+            "pov": cfg.style.pov,
+            "tense": cfg.style.tense,
+            "genre": cfg.style.genre,
+            "min_words": cfg.style.min_words,
+        },
+    )
     save_state(state, project_dir)
 
     console.print(f"[green]Created project '{name}'[/green] at {project_dir}")
     console.print("Starting pipeline…\n")
 
     from .pipeline import Pipeline
+
     pipeline = Pipeline(cfg, project_dir)
     pipeline.run(state)
 
@@ -79,6 +90,7 @@ def new(
 # ---------------------------------------------------------------------------
 # resume
 # ---------------------------------------------------------------------------
+
 
 @app.command()
 def resume(
@@ -99,9 +111,12 @@ def resume(
         console.print(f"[red]State error:[/red] {e}")
         raise typer.Exit(1)
 
-    console.print(f"[green]Resuming '{name}'[/green] at stage [bold]{state.current_stage}[/bold]")
+    console.print(
+        f"[green]Resuming '{name}'[/green] at stage [bold]{state.current_stage}[/bold]"
+    )
 
     from .pipeline import Pipeline
+
     pipeline = Pipeline(cfg, project_dir)
     pipeline.run(state)
 
@@ -110,10 +125,18 @@ def resume(
 # run
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def run(
     name: str = typer.Option(..., "--name", help="Project name."),
-    stage: str = typer.Option(..., "--stage", help="Stage name to run (e.g. characters)."),
+    stage: str = typer.Option(
+        ..., "--stage", help="Stage name to run (e.g. characters)."
+    ),
+    chapter: int = typer.Option(
+        None,
+        "--chapter",
+        help="Chapter number to regenerate (only for 'chapters' stage).",
+    ),
     config: Path = _DEFAULT_CONFIG,
 ) -> None:
     """Run a specific stage for a project (useful for reruns)."""
@@ -131,10 +154,37 @@ def run(
         raise typer.Exit(1)
 
     from .pipeline import Pipeline, STAGE_ORDER
+
     if stage not in STAGE_ORDER:
         console.print(f"[red]Unknown stage:[/red] {stage}")
         console.print(f"Valid stages: {', '.join(STAGE_ORDER)}")
         raise typer.Exit(1)
+
+    # Handle chapter-specific regeneration
+    if chapter is not None:
+        if stage != "chapters":
+            console.print(
+                f"[red]Error:[/red] --chapter flag can only be used with --stage chapters"
+            )
+            raise typer.Exit(1)
+        if chapter not in state.progress.approved_chapters:
+            console.print(
+                f"[yellow]Chapter {chapter} is not in approved chapters.[/yellow]"
+            )
+            console.print(
+                f"[dim]It will be generated when you run the chapters stage normally.[/dim]"
+            )
+            raise typer.Exit(0)
+
+        # Remove chapter from approved list to force regeneration
+        state.progress.approved_chapters.remove(chapter)
+        from .state import save_state
+
+        save_state(state, project_dir)
+        console.print(f"[green]✓ Chapter {chapter} removed from approved list.[/green]")
+        console.print(
+            f"[dim]It will be regenerated when the chapters stage runs.[/dim]"
+        )
 
     state.current_stage = stage
     pipeline = Pipeline(cfg, project_dir)
@@ -144,6 +194,7 @@ def run(
 # ---------------------------------------------------------------------------
 # list
 # ---------------------------------------------------------------------------
+
 
 @app.command(name="list")
 def list_projects(
@@ -158,7 +209,9 @@ def list_projects(
 
     output_dir = Path(cfg.output_dir)
     if not output_dir.exists():
-        console.print(f"[dim]No projects found (output_dir '{output_dir}' does not exist).[/dim]")
+        console.print(
+            f"[dim]No projects found (output_dir '{output_dir}' does not exist).[/dim]"
+        )
         return
 
     projects = sorted(output_dir.iterdir())
@@ -178,7 +231,9 @@ def list_projects(
         try:
             state = load_state(p)
             chapters = f"{len(state.progress.approved_chapters)} / {state.settings.total_chapters or '?'}"
-            table.add_row(state.project_name, state.current_stage, chapters, state.notes[:60])
+            table.add_row(
+                state.project_name, state.current_stage, chapters, state.notes[:60]
+            )
         except StateError:
             table.add_row(p.name, "[red]no state file[/red]", "-", "")
 
@@ -188,6 +243,7 @@ def list_projects(
 # ---------------------------------------------------------------------------
 # export
 # ---------------------------------------------------------------------------
+
 
 @app.command()
 def export(
@@ -209,6 +265,7 @@ def export(
         raise typer.Exit(1)
 
     from .stages.stage6_export import run as run_export
+
     run_export(cfg, project_dir, state)
 
 

@@ -6,13 +6,48 @@ from pathlib import Path
 from ..approval import ApprovalAction, ApprovalLoop
 from ..client import LLMClient
 from ..config import resolve_stage
-from ..display import console, show_info, show_review, show_success, show_warning, stream_response, word_count
+from ..display import (
+    console,
+    show_info,
+    show_review,
+    show_success,
+    show_warning,
+    stream_response,
+    word_count,
+)
 from ..exceptions import StageError
 from ..reviewer import AIReviewer
 from ..state import ProjectState, save_state
 
 _LOW_SCORE_THRESHOLD = 7.0
+_AUTO_APPROVE_SCORE_THRESHOLD = 9.0
 _MAX_MACRO_WORDS = 2000
+
+
+def _run_final_review(
+    reviewer,
+    chapter_num: int,
+    chapter_draft: str,
+    chapter_outline: str,
+    character_profiles: str,
+    word_count: int,
+    previous_chapters: str = "",
+    macro_summary: str = "",
+) -> "ReviewResult":
+    """Run a final AI review on a revised chapter."""
+    from ..display import show_info
+
+    show_info("Running final AI review…")
+    final_review = reviewer.review_chapter(
+        chapter_num=chapter_num,
+        chapter_draft=chapter_draft,
+        chapter_outline=chapter_outline,
+        character_profiles=character_profiles,
+        word_count=word_count,
+        previous_chapters=previous_chapters,
+        macro_summary=macro_summary,
+    )
+    return final_review
 
 
 def assemble_chapter_context(
@@ -25,6 +60,7 @@ def assemble_chapter_context(
     string values keyed by placeholder name. Keeps character profiles to
     only those mentioned in the chapter outline to control context size.
     """
+
     def read(path: str) -> str:
         p = project_dir / path
         return p.read_text(encoding="utf-8") if p.exists() else ""
@@ -38,25 +74,34 @@ def assemble_chapter_context(
         for profile_path in sorted(char_dir.glob("*.md")):
             char_name = profile_path.stem.replace("_", " ").lower()
             if char_name in outline_text.lower():
-                character_profiles += f"\n\n---\n### {profile_path.stem.replace('_', ' ')}\n"
+                character_profiles += (
+                    f"\n\n---\n### {profile_path.stem.replace('_', ' ')}\n"
+                )
                 character_profiles += profile_path.read_text(encoding="utf-8")
 
-    # Previous chapter for continuity
-    prev_chapter = ""
+    # Previous chapters for continuity checking (last 2-3 chapters)
+    previous_chapters = ""
     if chapter_num > 0:
-        prev_path = project_dir / f"chapters/chapter_{chapter_num - 1}.md"
-        if prev_path.exists():
-            prev_chapter = prev_path.read_text(encoding="utf-8")
+        chapters_to_include = 3  # Include up to 3 previous chapters
+        start_chapter = max(0, chapter_num - chapters_to_include)
+        for i in range(start_chapter, chapter_num):
+            prev_path = project_dir / f"chapters/chapter_{i}.md"
+            if prev_path.exists():
+                chapter_text = prev_path.read_text(encoding="utf-8")
+                label = "Prelude" if i == 0 else f"Chapter {i}"
+                previous_chapters += f"\n\n## {label}\n\n{chapter_text}\n\n---"
 
     return {
         "project_name": state.project_name,
         "chapter_num": str(chapter_num),
         "story_bible_content": read("story_bible.md"),
         "world_content": read("world.md"),
-        "macro_summary": read("summaries/macro.md") or "(no summary yet — this is an early chapter)",
-        "previous_chapter": prev_chapter or "(this is the first chapter)",
+        "macro_summary": read("summaries/macro.md")
+        or "(no summary yet — this is an early chapter)",
+        "previous_chapters": previous_chapters or "(this is the first chapter)",
         "chapter_outline": outline_text,
-        "character_profiles": character_profiles or "(no matching profiles found — check character directory)",
+        "character_profiles": character_profiles
+        or "(no matching profiles found — check character directory)",
         "pov": state.settings.pov,
         "tense": state.settings.tense,
         "genre": state.settings.genre,
@@ -84,7 +129,9 @@ def _update_macro_summary(
         f"CHAPTER:\n{chapter_text[:6000]}"
     )
     with LLMClient(stage_cfg) as client:
-        new_summary = client.complete(system, [{"role": "user", "content": summary_prompt}])
+        new_summary = client.complete(
+            system, [{"role": "user", "content": summary_prompt}]
+        )
 
     new_summary_block = f"\n\n## Chapter {chapter_num} Summary\n{new_summary.strip()}"
 
@@ -97,7 +144,9 @@ def _update_macro_summary(
             f"CURRENT SUMMARY:\n{existing}\n\nNEW CHAPTER SUMMARY TO APPEND:\n{new_summary_block}"
         )
         with LLMClient(stage_cfg) as client:
-            compressed = client.complete(system, [{"role": "user", "content": compress_prompt}])
+            compressed = client.complete(
+                system, [{"role": "user", "content": compress_prompt}]
+            )
         pipeline.write_file(compressed, "summaries/macro.md")
     else:
         pipeline.write_file(existing + new_summary_block, "summaries/macro.md")
@@ -118,7 +167,10 @@ def run(pipeline, state: ProjectState) -> ProjectState:
     reviewer = AIReviewer(pipeline)
 
     approved = set(state.progress.approved_chapters)
-    chapter_loop = ApprovalLoop(allow_skip=True, allow_use_review=True)
+    chapter_loop = ApprovalLoop(
+        allow_skip=True, allow_use_review=True, allow_approve_all=True
+    )
+    auto_approve_mode = False
 
     for chapter_num in range(0, total_chapters + 1):
         if chapter_num in approved:
@@ -127,10 +179,14 @@ def run(pipeline, state: ProjectState) -> ProjectState:
 
         outline_path = f"chapter_outlines/chapter_{chapter_num}_outline.md"
         if not (pipeline.project_dir / outline_path).exists():
-            show_warning(f"No outline for Chapter {chapter_num} — skipping. Run Stage 4 first.")
+            show_warning(
+                f"No outline for Chapter {chapter_num} — skipping. Run Stage 4 first."
+            )
             continue
 
-        console.print(f"\n[bold cyan]Chapter {chapter_num} of {total_chapters}[/bold cyan]")
+        console.print(
+            f"\n[bold cyan]Chapter {chapter_num} of {total_chapters}[/bold cyan]"
+        )
 
         # --- 1. Context assembly ---
         ctx = assemble_chapter_context(chapter_num, pipeline.project_dir, state)
@@ -140,12 +196,16 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         show_info("Generating internal scene brief…")
         brief_prompt = pipeline.build_user_prompt("stage5_scene_brief.txt", **ctx)
         with LLMClient(writer_cfg) as client:
-            scene_brief = client.complete(writer_system, [{"role": "user", "content": brief_prompt}])
+            scene_brief = client.complete(
+                writer_system, [{"role": "user", "content": brief_prompt}]
+            )
         ctx["scene_brief"] = f"INTERNAL SCENE BRIEF:\n{scene_brief}\n---"
 
         # --- 3. Draft generation ---
         base_write_prompt = pipeline.build_user_prompt("stage5_writer.txt", **ctx)
-        show_info(f"Writing draft with {writer_cfg.model} (temp={writer_cfg.temperature})…")
+        show_info(
+            f"Writing draft with {writer_cfg.model} (temp={writer_cfg.temperature})…"
+        )
         draft_messages = [{"role": "user", "content": base_write_prompt}]
         with LLMClient(writer_cfg) as client:
             draft = stream_response(
@@ -163,6 +223,8 @@ def run(pipeline, state: ProjectState) -> ProjectState:
             chapter_outline=ctx["chapter_outline"],
             character_profiles=ctx["character_profiles"],
             word_count=draft_wc,
+            previous_chapters=ctx["previous_chapters"],
+            macro_summary=ctx["macro_summary"],
         )
         show_review(review)
 
@@ -184,16 +246,51 @@ def run(pipeline, state: ProjectState) -> ProjectState:
         revision_messages.append({"role": "assistant", "content": revised})
         revised_wc = word_count(revised)
 
-        # --- 6. Approval loop ---
-        if review.score < _LOW_SCORE_THRESHOLD:
-            show_warning(f"Review score {review.score}/10 is below threshold.")
+        # --- 6. Final review on revised chapter ---
+        final_review = _run_final_review(
+            reviewer,
+            chapter_num,
+            revised,
+            ctx["chapter_outline"],
+            ctx["character_profiles"],
+            revised_wc,
+            ctx["previous_chapters"],
+            ctx["macro_summary"],
+        )
+        show_review(final_review)
+
+        # --- 7. Approval loop ---
+        if final_review.score < _LOW_SCORE_THRESHOLD:
+            show_warning(
+                f"Final review score {final_review.score}/10 is below threshold."
+            )
         if revised_wc < state.settings.min_words_per_chapter:
             show_warning(
                 f"Word count {revised_wc:,} is below minimum {state.settings.min_words_per_chapter:,}."
             )
-        console.print(f"[dim]Review score: {review.score}/10  |  Words: {revised_wc:,}[/dim]")
+        console.print(
+            f"[dim]Final review score: {final_review.score}/10  |  Words: {revised_wc:,}[/dim]"
+        )
 
         chapter_brief = ""
+
+        # Auto-approve if enabled and score meets threshold
+        if auto_approve_mode:
+            if final_review.score >= _AUTO_APPROVE_SCORE_THRESHOLD:
+                chapter_path = f"chapters/chapter_{chapter_num}.md"
+                pipeline.write_file(revised, chapter_path)
+                state.progress.approved_chapters.append(chapter_num)
+                state.progress.last_approved_chapter = chapter_num
+                save_state(state, pipeline.project_dir)
+                show_info("Updating macro summary…")
+                _update_macro_summary(pipeline, chapter_num, revised, state)
+                show_success(f"{chapter_path} auto-approved.")
+                continue
+            else:
+                auto_approve_mode = False
+                show_warning(
+                    f"Auto-approve disabled: final review score {final_review.score}/10 below threshold {_AUTO_APPROVE_SCORE_THRESHOLD}."
+                )
 
         while True:
             action, user_text = chapter_loop.wait(f"Chapter {chapter_num}")
@@ -207,6 +304,24 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 show_info("Updating macro summary…")
                 _update_macro_summary(pipeline, chapter_num, revised, state)
                 show_success(f"{chapter_path} saved.")
+                break
+
+            elif action == ApprovalAction.APPROVE_ALL:
+                if final_review.score < _AUTO_APPROVE_SCORE_THRESHOLD:
+                    show_warning(
+                        f"Cannot enable auto-approve: final review score {final_review.score}/10 is below threshold {_AUTO_APPROVE_SCORE_THRESHOLD}."
+                    )
+                    continue
+                auto_approve_mode = True
+                show_info(
+                    f"Auto-approve enabled. Will approve chapters with final review score >= {_AUTO_APPROVE_SCORE_THRESHOLD}/10."
+                )
+                pipeline.write_file(revised, chapter_path)
+                state.progress.approved_chapters.append(chapter_num)
+                state.progress.last_approved_chapter = chapter_num
+                save_state(state, pipeline.project_dir)
+                _update_macro_summary(pipeline, chapter_num, revised, state)
+                show_success(f"{chapter_path} auto-approved.")
                 break
 
             elif action == ApprovalAction.SKIP:
@@ -242,6 +357,8 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                     chapter_outline=ctx["chapter_outline"],
                     character_profiles=ctx["character_profiles"],
                     word_count=draft_wc,
+                    previous_chapters=ctx["previous_chapters"],
+                    macro_summary=ctx["macro_summary"],
                 )
                 show_review(review)
 
@@ -261,7 +378,19 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                     )
                 revision_messages.append({"role": "assistant", "content": revised})
                 revised_wc = word_count(revised)
-                console.print(f"[dim]Review score: {review.score}/10  |  Words: {revised_wc:,}[/dim]")
+
+                final_review = _run_final_review(
+                    reviewer,
+                    chapter_num,
+                    revised,
+                    ctx["chapter_outline"],
+                    ctx["character_profiles"],
+                    revised_wc,
+                )
+                show_review(final_review)
+                console.print(
+                    f"[dim]Final review score: {final_review.score}/10  |  Words: {revised_wc:,}[/dim]"
+                )
 
             elif action == ApprovalAction.USE_REVIEW:
                 show_info("Regenerating using review as brief…")
@@ -278,10 +407,24 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                         title=f"Chapter {chapter_num} — Use-Review Draft",
                         border_style="cyan",
                     )
-                revision_messages = [{"role": "user", "content": use_review_prompt},
-                                     {"role": "assistant", "content": revised}]
+                revision_messages = [
+                    {"role": "user", "content": use_review_prompt},
+                    {"role": "assistant", "content": revised},
+                ]
                 revised_wc = word_count(revised)
-                console.print(f"[dim]Words: {revised_wc:,}[/dim]")
+
+                final_review = _run_final_review(
+                    reviewer,
+                    chapter_num,
+                    revised,
+                    ctx["chapter_outline"],
+                    ctx["character_profiles"],
+                    revised_wc,
+                )
+                show_review(final_review)
+                console.print(
+                    f"[dim]Final review score: {final_review.score}/10  |  Words: {revised_wc:,}[/dim]"
+                )
 
             elif action == ApprovalAction.FEEDBACK:
                 show_info("Incorporating feedback…")
@@ -294,7 +437,19 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                     )
                 revision_messages.append({"role": "assistant", "content": revised})
                 revised_wc = word_count(revised)
-                console.print(f"[dim]Words: {revised_wc:,}[/dim]")
+
+                final_review = _run_final_review(
+                    reviewer,
+                    chapter_num,
+                    revised,
+                    ctx["chapter_outline"],
+                    ctx["character_profiles"],
+                    revised_wc,
+                )
+                show_review(final_review)
+                console.print(
+                    f"[dim]Final review score: {final_review.score}/10  |  Words: {revised_wc:,}[/dim]"
+                )
 
             elif action == ApprovalAction.EDIT:
                 revised = user_text
@@ -307,6 +462,6 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 show_success(f"{chapter_path} saved (manual edit).")
                 break
 
-    state.current_stage = "stage6_export"
+    state.current_stage = "stage6_batch_review"
     save_state(state, pipeline.project_dir)
     return state

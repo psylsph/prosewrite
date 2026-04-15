@@ -16,17 +16,19 @@ STAGE_ORDER = [
     "stage3_characters",
     "stage4_outlines",
     "stage5_chapters",
-    "stage6_export",
+    "stage6_batch_review",
+    "stage7_export",
 ]
 
 STAGE_LABELS = {
-    "stage0_seed":       (0, "Seed Analysis"),
-    "stage1_bible":      (1, "Story Bible"),
-    "stage2_world":      (2, "World Builder"),
+    "stage0_seed": (0, "Seed Analysis"),
+    "stage1_bible": (1, "Story Bible"),
+    "stage2_world": (2, "World Builder"),
     "stage3_characters": (3, "Characters"),
-    "stage4_outlines":   (4, "Chapter Outlines"),
-    "stage5_chapters":   (5, "Chapter Writing"),
-    "stage6_export":     (6, "Export"),
+    "stage4_outlines": (4, "Chapter Outlines"),
+    "stage5_chapters": (5, "Chapter Writing"),
+    "stage6_batch_review": (6, "Batch Review"),
+    "stage7_export": (7, "Export"),
 }
 
 
@@ -34,8 +36,7 @@ def _load_prompt(prompts_dir: Path, filename: str) -> str:
     path = prompts_dir / filename
     if not path.exists():
         raise PromptError(
-            f"Prompt file not found: {path}\n"
-            f"Expected at: {path.resolve()}"
+            f"Prompt file not found: {path}\nExpected at: {path.resolve()}"
         )
     return path.read_text(encoding="utf-8")
 
@@ -103,7 +104,11 @@ class Pipeline:
 
     def run(self, state: ProjectState) -> None:
         """Run the pipeline from the current stage forward."""
-        start_idx = STAGE_ORDER.index(state.current_stage) if state.current_stage in STAGE_ORDER else 0
+        start_idx = (
+            STAGE_ORDER.index(state.current_stage)
+            if state.current_stage in STAGE_ORDER
+            else 0
+        )
 
         for stage_name in STAGE_ORDER[start_idx:]:
             num, label = STAGE_LABELS[stage_name]
@@ -133,8 +138,10 @@ class Pipeline:
             from .stages.stage4_outlines import run
         elif stage_name == "stage5_chapters":
             from .stages.stage5_chapters import run
-        elif stage_name == "stage6_export":
-            from .stages.stage6_export import run
+        elif stage_name == "stage6_batch_review":
+            from .stages.stage6_batch_review import run
+        elif stage_name == "stage7_export":
+            from .stages.stage7_export import run
         else:
             raise StageError(f"Unknown stage: {stage_name}")
 

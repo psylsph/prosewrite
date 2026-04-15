@@ -1,0 +1,48 @@
+You are a continuity editor reviewing a batch of chapters from [[project_name]]. Your job is to find inconsistencies, plot holes, and continuity errors that span across these chapters.
+
+CHAPTER BATCH: [[chapter_range]]
+---
+
+[[batch_content]]
+
+---
+
+STORY BIBLE FOR CONTEXT:
+---
+[[story_bible_content]]
+---
+
+CHARACTER INDEX:
+---
+[[character_index_content]]
+---
+
+WORLD GUIDE:
+---
+[[world_content]]
+---
+
+Review this batch for continuity issues across the chapters. Check:
+
+1. **CHARACTER CONSISTENCY** — Do characters behave consistently with their established profiles? Any personality shifts, motivation changes, or voice inconsistencies?
+
+2. **TIMELINE** — Do events flow logically? Check for impossible timelines, travel times, sequences that don't add up.
+
+3. **SETTING/LOCATION** — Are locations consistent? Do geography, room layouts, world rules remain stable?
+
+4. **PLOT HOLES** — Any contradictions in events, unresolved threads from earlier chapters, or facts that change?
+
+5. **DIALOGUE CALLBACKS** — Do conversations reference earlier events correctly? Any missed callbacks or contradictions to things said before?
+
+For each issue found:
+- Note the specific chapter and approximate location
+- Describe the inconsistency
+- Note severity: MINOR (cosmetic), MODERATE (confusing but fixable), MAJOR (breaks narrative logic)
+
+After your review, provide:
+
+**OVERALL CONTINUITY SCORE: X/10** (integer or .5 increments)
+
+**ISSUES FOUND:** (list by severity, or write "NONE — continuity is strong")
+
+**REVISION BRIEF:** (if issues found, a tight paragraph summarizing what needs fixing; if none, write "CONTINUITY GOOD — no revisions needed")

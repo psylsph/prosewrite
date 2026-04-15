@@ -82,18 +82,20 @@ class TestLoadConfig:
 
     def test_stage_inherits_defaults(self):
         cfg = load_config(DEFAULT_CONFIG_PATH)
-        # seed_analysis overrides temperature but not model
+        # seed_analysis overrides temperature (0.3) but not model
         stage = cfg.stages["seed_analysis"]
-        assert stage.temperature == 1.0
+        assert stage.temperature == 0.3
         assert stage.model == cfg.defaults.model  # inherited
 
     def test_missing_config_raises(self, tmp_path):
         from prosewrite.exceptions import ConfigError
+
         with pytest.raises(ConfigError, match="not found"):
             load_config(tmp_path / "nonexistent.toml")
 
     def test_invalid_toml_raises(self, tmp_path):
         from prosewrite.exceptions import ConfigError
+
         bad = tmp_path / "bad.toml"
         bad.write_text("this is not [ valid toml !!!", encoding="utf-8")
         with pytest.raises(ConfigError):
@@ -104,7 +106,7 @@ class TestResolveStage:
     def test_known_stage(self):
         cfg = load_config(DEFAULT_CONFIG_PATH)
         stage = resolve_stage(cfg, "seed_analysis")
-        assert stage.temperature == 1.0
+        assert stage.temperature == 0.3
 
     def test_unknown_stage_falls_back_to_defaults(self):
         cfg = load_config(DEFAULT_CONFIG_PATH)
@@ -121,6 +123,7 @@ class TestApiKey:
 
     def test_missing_api_key_raises(self):
         from prosewrite.exceptions import ConfigError
+
         cfg = load_config(DEFAULT_CONFIG_PATH)
         key_env = cfg.defaults.api_key_env
         env = {k: v for k, v in os.environ.items() if k != key_env}

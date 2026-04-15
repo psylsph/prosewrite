@@ -2,7 +2,13 @@ TASK: CHAPTER HOOKS
 
 ⚠ CRITICAL: The SEED DOCUMENT contains specific requirements the author has mandated for this story. Every requirement in the seed — specific scenes, plot events, character moments, world details — must be assigned to a chapter. Do not invent a chapter plan that ignores or sidelines these requirements.
 
-Write one hook entry per chapter, for all [[total_chapters]] chapters (plus Chapter 0 if there is a prelude).
+Determine the appropriate number of chapters based on:
+- The scope and complexity of the story
+- The narrative arc requirements from the story bible
+- All the specific scenes/events required by the seed
+- Proper pacing and story structure (not too rushed, not too stretched)
+
+Write one hook entry per chapter. Include Chapter 0 (prelude) only if the story requires setup that shouldn't be in Chapter 1.
 
 Format each entry exactly like this:
 

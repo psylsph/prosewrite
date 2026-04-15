@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import tomllib
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 from .exceptions import ConfigError
@@ -91,7 +91,10 @@ def load_config(path: Path = DEFAULT_CONFIG_PATH) -> ProjectConfig:
 
     defaults = _parse_defaults(raw)
     raw_stages = raw.get("stages", {})
-    stages = {name: _merge_stage(defaults, overrides) for name, overrides in raw_stages.items()}
+    stages = {
+        name: _merge_stage(defaults, overrides)
+        for name, overrides in raw_stages.items()
+    }
 
     raw_persona = raw.get("persona", {})
     persona = PersonaConfig(
@@ -133,18 +136,30 @@ def validate_config(cfg: ProjectConfig) -> list[str]:
     warnings: list[str] = []
 
     if not cfg.persona.name:
-        warnings.append("[persona] name is empty — persona will not be injected into prompts.")
+        warnings.append(
+            "[persona] name is empty — persona will not be injected into prompts."
+        )
     if not cfg.persona.description:
-        warnings.append("[persona] description is empty — AI will use no editorial personality.")
+        warnings.append(
+            "[persona] description is empty — AI will use no editorial personality."
+        )
     if cfg.style.min_words < 500:
-        warnings.append(f"[style] min_words={cfg.style.min_words} seems very low for a chapter.")
-    if cfg.defaults.temperature > 2.0:
-        warnings.append(f"[defaults] temperature={cfg.defaults.temperature} may be out of range (max 2.0).")
+        warnings.append(
+            f"[style] min_words={cfg.style.min_words} seems very low for a chapter."
+        )
+    if cfg.defaults.temperature > 1.0:
+        warnings.append(
+            f"[defaults] temperature={cfg.defaults.temperature} may be out of range (max 1.0)."
+        )
 
     for stage_name, stage in cfg.stages.items():
-        if stage.temperature > 2.0:
-            warnings.append(f"[stages.{stage_name}] temperature={stage.temperature} may be out of range (max 2.0).")
+        if stage.temperature > 1.0:
+            warnings.append(
+                f"[stages.{stage_name}] temperature={stage.temperature} may be out of range (max 1.0)."
+            )
         if stage.max_tokens < 256:
-            warnings.append(f"[stages.{stage_name}] max_tokens={stage.max_tokens} is very low.")
+            warnings.append(
+                f"[stages.{stage_name}] max_tokens={stage.max_tokens} is very low."
+            )
 
     return warnings

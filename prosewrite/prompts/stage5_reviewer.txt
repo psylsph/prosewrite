@@ -10,6 +10,16 @@ CHAPTER OUTLINE (what was intended):
 [[chapter_outline]]
 ---
 
+PREVIOUS CHAPTERS (for continuity checking):
+---
+[[previous_chapters]]
+---
+
+MACRO SUMMARY (story so far):
+---
+[[macro_summary]]
+---
+
 CHARACTER PROFILES:
 ---
 [[character_profiles]]
@@ -24,35 +34,37 @@ STYLE CONTRACT:
 
 ---
 
-Review this chapter against all 12 criteria below. For each criterion: assign a score (1–10) and write 1–3 sentences of specific feedback. "Good" is not feedback. Name the specific line, scene, or pattern that earns the score.
+Review this chapter against all 13 criteria below. For each criterion: assign a score (1–10) and write 1–3 sentences of specific feedback. "Good" is not feedback. Name the specific line, scene, or pattern that earns the score.
 
-1. **POV DISCIPLINE** — Does the narration stay inside the POV character's knowledge and perception? No head-hopping, no omniscient intrusions.
+1. **DUPLICATE CONTENT CHECK** ⚠️ — Does this chapter cover an event, mission, or scene that has already been covered in previous chapters? Check the previous chapters and macro summary. If you find duplicate coverage, this is a CRITICAL error. List any duplicate events found with chapter numbers.
 
-2. **VOICE CONSISTENCY** — Does the prose sound like the same authorial voice throughout? Does each character's dialogue sound distinct from the others?
+2. **CROSS-CHAPTER CONSISTENCY** — Does this chapter contradict specific events, details, facts, or character states established in previous chapters? Check timeline, locations, character knowledge, and plot points. List ALL contradictions found with specific references.
 
-3. **SCENE MOMENTUM** — Does each scene have a clear power dynamic? Does it move? Is there at least one moment where the situation materially changes?
+3. **POV DISCIPLINE** — Does the narration stay inside the POV character's knowledge and perception? No head-hopping, no omniscient intrusions.
 
-4. **DIALOGUE QUALITY** — Is every line of dialogue doing at least two things (revealing character AND advancing situation)? Any on-the-nose exposition in dialogue?
+4. **VOICE CONSISTENCY** — Does the prose sound like the same authorial voice throughout? Does each character's dialogue sound distinct from the others?
 
-5. **SENSORY SPECIFICITY** — Are abstract descriptions replaced by concrete, sensory detail? Flag any paragraph that could have been written without the author having imagined the scene.
+5. **SCENE MOMENTUM** — Does each scene have a clear power dynamic? Does it move? Is there at least one moment where the situation materially changes?
 
-6. **PACING** — Does sentence length vary with the emotional register? Is the chapter's internal rhythm appropriate to its genre and content?
+6. **DIALOGUE QUALITY** — Is every line of dialogue doing at least two things (revealing character AND advancing situation)? Any on-the-nose exposition in dialogue?
 
-7. **CONTINUITY** — Does this chapter contradict any established fact from the story bible, world guide, or character profiles? List any specific contradictions found.
+7. **SENSORY SPECIFICITY** — Are abstract descriptions replaced by concrete, sensory detail? Flag any paragraph that could have been written without the author having imagined the scene.
 
-8. **OUTLINE ADHERENCE** — Did the chapter hit the scenes and hook described in the outline? Note any significant deviations.
+8. **PACING** — Does sentence length vary with the emotional register? Is the chapter's internal rhythm appropriate to its genre and content?
 
-9. **PROHIBITED PHRASES** — Check for: "suddenly", "little did he/she know", sentences beginning with noticing/realising, adjective stacking, on-the-nose emotional labelling.
+9. **WORLD/CHARACTER CONTINUITY** — Does this chapter contradict any established fact from the story bible, world guide, or character profiles? List any specific contradictions found.
 
-10. **WORD COUNT** — Does the draft meet the minimum word count ([[min_words]] words)? If not, where is it thin?
+10. **OUTLINE ADHERENCE** — Did the chapter hit the scenes and hook described in the outline? Note any significant deviations.
 
-11. **THE HOOK** — Does the final line/scene land? Is it the chapter's most powerful moment? Would a reader stop reading here or turn the page?
+11. **PROHIBITED PHRASES** — Check for: "suddenly", "little did he/she know", sentences beginning with noticing/realising, adjective stacking, on-the-nose emotional labelling.
 
-12. **ANTI-FLATNESS** — Is the prose personality-rich or generic? Would this chapter be recognisable as this book, or could it have been written by any AI?
+12. **WORD COUNT** — Does the draft meet the minimum word count ([[min_words]] words)? If not, where is it thin?
+
+13. **THE HOOK** — Does the final line/scene land? Is it the chapter's most powerful moment? Would a reader stop reading here or turn the page?
 
 ---
 
-After the 12-criteria review, provide:
+After the review, provide:
 
 **OVERALL SCORE: X/10** (integer or .5 increments)
 

@@ -10,7 +10,9 @@ from .pipeline import Pipeline
 
 def _extract_score(review_text: str) -> float:
     """Extract numeric score from reviewer output. Returns 0.0 if not found."""
-    match = re.search(r"OVERALL SCORE:\s*(\d+(?:\.\d+)?)\s*/\s*10", review_text, re.IGNORECASE)
+    match = re.search(
+        r"OVERALL SCORE:\s*(\d+(?:\.\d+)?)\s*/\s*10", review_text, re.IGNORECASE
+    )
     if match:
         return float(match.group(1))
     # Fallback: look for standalone N/10 pattern
@@ -22,7 +24,9 @@ def _extract_score(review_text: str) -> float:
 
 def _extract_revision_brief(review_text: str) -> str:
     """Extract the REVISION BRIEF section from reviewer output."""
-    match = re.search(r"REVISION BRIEF[^:]*:(.*?)$", review_text, re.IGNORECASE | re.DOTALL)
+    match = re.search(
+        r"REVISION BRIEF[^:]*:(.*?)$", review_text, re.IGNORECASE | re.DOTALL
+    )
     if match:
         return match.group(1).strip()
     return ""
@@ -30,7 +34,11 @@ def _extract_revision_brief(review_text: str) -> str:
 
 def _extract_summary(review_text: str) -> str:
     """Extract TOP 3 ISSUES as a short summary."""
-    match = re.search(r"TOP 3 ISSUES[^:]*:(.*?)(?:WHAT WORKS|$)", review_text, re.IGNORECASE | re.DOTALL)
+    match = re.search(
+        r"TOP 3 ISSUES[^:]*:(.*?)(?:WHAT WORKS|$)",
+        review_text,
+        re.IGNORECASE | re.DOTALL,
+    )
     if match:
         return match.group(1).strip()
     return review_text[:300]
@@ -48,6 +56,8 @@ class AIReviewer:
         chapter_outline: str,
         character_profiles: str,
         word_count: int,
+        previous_chapters: str = "",
+        macro_summary: str = "",
     ) -> ReviewResult:
         stage_cfg = resolve_stage(self.cfg, "chapter_reviewer")
         system = self.pipeline.build_system_prompt("chapter_reviewer")
@@ -57,6 +67,8 @@ class AIReviewer:
             chapter_num=str(chapter_num),
             chapter_draft=chapter_draft,
             chapter_outline=chapter_outline,
+            previous_chapters=previous_chapters,
+            macro_summary=macro_summary,
             character_profiles=character_profiles,
             pov=self.cfg.style.pov,
             tense=self.cfg.style.tense,
@@ -65,7 +77,9 @@ class AIReviewer:
             word_count=str(word_count),
         )
         with LLMClient(stage_cfg) as client:
-            review_text = client.complete(system, [{"role": "user", "content": user_prompt}])
+            review_text = client.complete(
+                system, [{"role": "user", "content": user_prompt}]
+            )
 
         return ReviewResult(
             score=_extract_score(review_text),
@@ -80,27 +94,63 @@ class AIReviewer:
         outline_text: str,
         story_bible: str,
         character_index: str,
+        previous_outlines: str = "",
     ) -> ReviewResult:
-        """Quick outline review using the chapter_reviewer config."""
+        """Review chapter outline with continuity checking against previous outlines."""
         stage_cfg = resolve_stage(self.cfg, "chapter_reviewer")
         system = self.pipeline.build_system_prompt("chapter_reviewer")
 
-        prompt = (
-            f"Review this chapter outline for Chapter {chapter_num} of {self.cfg.name}. "
-            f"Score it out of 10. Check: clear narrative purpose, scene-level specificity, "
-            f"continuity with story bible and character index, a strong hook, "
-            f"and no plot holes or logic gaps.\n\n"
-            f"OUTLINE:\n{outline_text}\n\n"
-            f"STORY BIBLE EXCERPT:\n{story_bible[:2000]}\n\n"
-            f"CHARACTER INDEX:\n{character_index}\n\n"
-            f"Provide: per-criterion notes, OVERALL SCORE: X/10, and TOP 3 ISSUES."
+        user_prompt = self.pipeline.build_user_prompt(
+            "stage4_outline_review.txt",
+            project_name=self.cfg.name,
+            chapter_num=str(chapter_num),
+            outline_text=outline_text,
+            previous_outlines=previous_outlines,
+            story_bible=story_bible[:4000],
+            character_index=character_index[:3000],
+            chapter_list_entry=f"Chapter {chapter_num}",
         )
 
         with LLMClient(stage_cfg) as client:
-            review_text = client.complete(system, [{"role": "user", "content": prompt}])
+            review_text = client.complete(
+                system, [{"role": "user", "content": user_prompt}]
+            )
 
         return ReviewResult(
             score=_extract_score(review_text),
             summary=_extract_summary(review_text),
             full_text=review_text,
+            revision_brief=_extract_revision_brief(review_text),
+        )
+
+    def review_chapter_list(
+        self,
+        chapter_list: str,
+        story_bible: str,
+        world_content: str,
+        character_index: str,
+    ) -> ReviewResult:
+        """Review the entire chapter list for duplicates and structural issues."""
+        stage_cfg = resolve_stage(self.cfg, "chapter_reviewer")
+        system = self.pipeline.build_system_prompt("chapter_reviewer")
+
+        user_prompt = self.pipeline.build_user_prompt(
+            "stage4_chapter_list_review.txt",
+            project_name=self.cfg.name,
+            chapter_list=chapter_list,
+            story_bible=story_bible[:4000],
+            world_content=world_content[:3000],
+            character_index_content=character_index[:3000],
+        )
+
+        with LLMClient(stage_cfg) as client:
+            review_text = client.complete(
+                system, [{"role": "user", "content": user_prompt}]
+            )
+
+        return ReviewResult(
+            score=_extract_score(review_text),
+            summary=_extract_summary(review_text),
+            full_text=review_text,
+            revision_brief=_extract_revision_brief(review_text),
         )

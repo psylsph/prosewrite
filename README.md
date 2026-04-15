@@ -38,9 +38,19 @@ prosewrite resume --name unit_985
 | 1 | Story Bible | Genre, arc, themes, chapter count — the north star |
 | 2 | World Builder | Settings, locations, world rules, glossary |
 | 3 | Characters | Character index + per-character voice profiles |
-| 4 | Chapter Outlines | Chapter list + detailed per-chapter outlines |
-| 5 | Chapter Writing | Draft → AI review → revision → approval |
-| 6 | Export | `manuscript.md` (+ optional `.docx`) |
+| 4 | Chapter Outlines | Chapter list review → individual outlines with AI review |
+| 5 | Chapter Writing | Draft → AI review → revision → **final review** → approval |
+| 6 | Batch Review | Cross-chapter continuity and quality review |
+| 7 | Export | `manuscript.md` (+ optional `.docx`, `.epub`) |
+
+**Stage 6 - Batch Review** runs automatically after all chapters are complete:
+
+- Groups chapters into overlapping batches of 5 (2-chapter overlap between batches)
+- Example: Chapters [0-4], [3-7], [6-10], etc.
+- **Continuity check** — fast scan for plot holes, character consistency, timeline issues
+- **Quality review** — if issues found, runs full 12-criterion rubric on each chapter in the batch
+- Auto-approve for clean batches (continuity score ≥ 9.0, no MAJOR issues)
+- Manual review for batches with issues
 
 At every stage you can:
 - **Approve** — save and move on (`yes`, `good`, `approve`, `next`, etc.)
@@ -49,6 +59,21 @@ At every stage you can:
 - **Edit yourself** — paste your own version (`i'll edit it`)
 - **Use review** — regenerate using the AI reviewer's brief (`use review`)
 - **Skip** — skip this item (chapter stages only) (`skip`)
+
+**Stage 4 notes:**
+- **NEW:** Chapter count determined by story scope during chapter list generation (not pre-specified)
+- **NEW:** Chapter list goes through **automatic AI review → revision → final review** before user sees it
+- **NEW:** Chapter list review catches duplicate missions/events BEFORE generating individual outlines
+- **NEW:** Each outline goes through iterative AI review with continuity checking
+- Checks for duplicate missions/events across previous 3 outlines
+- Catches contradictory plot points before prose is written
+- Auto-approve support for clean outlines (score ≥ 9.0)
+
+**Stage 5 notes:** 
+- Every revision triggers a final AI review before the approval menu
+- **NEW:** AI review checks for duplicate content and contradictions across previous chapters
+- Includes last 2-3 chapters + macro summary to catch continuity issues early
+- Prevents duplicate missions/events before they compound
 
 ---
 
@@ -114,6 +139,9 @@ prosewrite resume --name <name>
 
 # Rerun a specific stage
 prosewrite run --name <name> --stage characters
+
+# Regenerate a specific chapter
+prosewrite run --name <name> --stage chapters --chapter 4
 
 # List all projects
 prosewrite list

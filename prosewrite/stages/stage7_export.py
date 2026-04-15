@@ -20,10 +20,12 @@ def _chapter_num(p: Path) -> int:
 def _md_to_html(text: str) -> str:
     """Convert markdown chapter text to HTML for EPUB."""
     import markdown as md_lib
+
     return md_lib.markdown(text, extensions=["extra", "nl2br"])
 
 
 # ── Format writers ────────────────────────────────────────────────────────────
+
 
 def _write_markdown(
     project_dir: Path,
@@ -105,12 +107,7 @@ def _write_epub(
     for i, (heading, body) in enumerate(manuscript_parts, 1):
         filename = f"chap_{i:03d}.xhtml"
         html_body = _md_to_html(body)
-        content = (
-            f"<html><body>"
-            f"<h1>{heading}</h1>"
-            f"{html_body}"
-            f"</body></html>"
-        )
+        content = f"<html><body><h1>{heading}</h1>{html_body}</body></html>"
         chap = epub.EpubHtml(title=heading, file_name=filename, lang="en")
         chap.content = content
         book.add_item(chap)
@@ -127,7 +124,7 @@ def _write_epub(
         file_name="style/main.css",
         media_type="text/css",
         content=b"body { font-family: Georgia, serif; line-height: 1.6; margin: 2em; }"
-                b"h1 { margin-top: 2em; } p { text-indent: 1.5em; margin: 0; }",
+        b"h1 { margin-top: 2em; } p { text-indent: 1.5em; margin: 0; }",
     )
     book.add_item(css)
     for chap in epub_chapters:
@@ -143,12 +140,14 @@ def _write_epub(
 
 # ── Stage entry point ─────────────────────────────────────────────────────────
 
+
 def run(cfg: ProjectConfig, project_dir: Path, state: ProjectState) -> None:
     """Stage 6 — Export approved chapters to selected formats."""
     chapters_dir = project_dir / "chapters"
     chapter_files = (
         sorted(chapters_dir.glob("chapter_*.md"), key=_chapter_num)
-        if chapters_dir.exists() else []
+        if chapters_dir.exists()
+        else []
     )
 
     if not chapter_files:
@@ -182,7 +181,7 @@ def run(cfg: ProjectConfig, project_dir: Path, state: ProjectState) -> None:
     formats = questionary.checkbox(
         "Select export formats",
         choices=[
-            questionary.Choice("Markdown  (.md)",  value="md",   checked=True),
+            questionary.Choice("Markdown  (.md)", value="md", checked=True),
             questionary.Choice("EPUB      (.epub)", value="epub", checked=True),
             questionary.Choice("Word      (.docx)", value="docx", checked=False),
         ],
@@ -203,5 +202,5 @@ def run(cfg: ProjectConfig, project_dir: Path, state: ProjectState) -> None:
     if "docx" in formats:
         _write_docx(project_dir, state.project_name, manuscript_parts)
 
-    state.current_stage = "stage6_export"
+    state.current_stage = "done"
     save_state(state, project_dir)

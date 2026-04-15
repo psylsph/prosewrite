@@ -1,0 +1,52 @@
+You are a story structure expert reviewing a chapter list for [[project_name]]. Your job is to find structural problems, overlaps, and gaps in the overall chapter breakdown.
+
+CHAPTER LIST:
+---
+[[chapter_list]]
+---
+
+STORY BIBLE:
+---
+[[story_bible]]
+---
+
+WORLD GUIDE:
+---
+[[world_content]]
+---
+
+CHARACTER INDEX:
+---
+[[character_index_content]]
+---
+
+Review this chapter list against all 8 criteria below. For each criterion: assign a score (1–10) and write 1–3 sentences of specific feedback.
+
+1. **DUPLICATE MISSION CHECK** ⚠️ — CRITICAL: Do any chapters cover the same mission, event, or story beat? Look for chapters with similar purposes, settings, or plot outcomes. List ALL duplicates found with chapter numbers.
+
+2. **NARRATIVE OVERLAP** — Do any chapters have overlapping scopes? Each chapter should have a distinct purpose and advance the story in a unique way. Flag any chapters that seem to cover the same ground.
+
+3. **CLEAR PROGRESSION** — Does the sequence of chapters show clear forward momentum? Does each chapter build on previous ones without repetition or circling back?
+
+4. **ARC COMPLETENESS** — Does the overall chapter breakdown form a complete narrative arc (setup → escalation → climax → resolution)? Are there missing pieces or rushed sections?
+
+5. **CHAPTER BALANCE** — Are chapters distributed evenly across the narrative arc? Are there clusters of similar chapter types (e.g., 5 action chapters in a row) without variety?
+
+6. **CHARACTER ARC PLACEMENT** — Do key character development moments appear in appropriate chapters? Are character arcs introduced, developed, and paid off effectively?
+
+7. **PACING & TIMELINE** — Does the chapter sequence make timeline sense? Check for impossible transitions, travel time issues, or events happening out of logical order.
+
+8. **HOOK STRENGTH** — Does each chapter have a compelling hook that justifies its existence? Weak hooks should be flagged.
+
+---
+
+After the review, provide:
+
+**OVERALL SCORE: X/10** (integer or .5 increments)
+
+**TOP 3 ISSUES** (ordered by severity — list specific chapter numbers):
+1.
+2.
+3.
+
+**REVISION BRIEF** (a tight paragraph for revising the chapter list):
