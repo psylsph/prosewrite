@@ -2,11 +2,28 @@ TASK: CHAPTER HOOKS
 
 ⚠ CRITICAL: The SEED DOCUMENT contains specific requirements the author has mandated for this story. Every requirement in the seed — specific scenes, plot events, character moments, world details — must be assigned to a chapter. Do not invent a chapter plan that ignores or sidelines these requirements.
 
+Your job is to generate a COMPLETE chapter list in a single response. Output ALL chapters at once — do NOT stop early.
+
+---
+
+## NUMBER OF CHAPTERS
+
 Determine the appropriate number of chapters based on:
 - The scope and complexity of the story
 - The narrative arc requirements from the story bible
 - All the specific scenes/events required by the seed
 - Proper pacing and story structure (not too rushed, not too stretched)
+
+Common ranges:
+- Short novel: 20-30 chapters
+- Standard novel: 25-35 chapters  
+- Epic novel: 30-50 chapters
+
+Choose a number that fits YOUR story — there is no preset limit.
+
+---
+
+## OUTPUT FORMAT
 
 Write one hook entry per chapter. Include Chapter 0 (prelude) only if the story requires setup that shouldn't be in Chapter 1.
 
@@ -19,4 +36,33 @@ Purpose: [one line — what changes between the first and last page of this chap
 
 ---
 
+## ANTI-OVERLAP RULES ⚠️⚠️⚠️
+
+You MUST ensure each chapter is DISTINCT. Apply these rules:
+
+1. **SAME LOCATION = MERGE**: If two chapters both occur in the same location with similar characters, MERGE them into one chapter with both beats.
+
+2. **SAME CHARACTER ARC = MERGE**: If two chapters both focus on the same character's development of the same trait/relationship, MERGE them.
+
+3. **SAME PLOT BEAT = MERGE**: If two chapters advance the same plot thread in similar ways (e.g., two "they escape" chapters), MERGE them.
+
+4. **SEQUENCE BEATS NOT STATES**: A chapter should move the plot FORWARD, not just show characters in a state. "Character arrives at location" is NOT enough — something must CHANGE.
+
+5. **HOOKS MUST DIFFER**: Chapter 1's hook cannot be "character is in X" if Chapter 2's hook is also "character is in X" but slightly later. The hook must represent a shift, not a continuation.
+
+6. **ONE CHAPTER PER MAJOR BEAT**: Each major story beat (revelation, decision, failure, success, death, escape, etc.) should appear in ONE chapter only.
+
+7. **NO REPETITIVE STRUCTURE**: Don't do "they plan, they execute" back-to-back repeatedly. Vary: plan-execute-reveal, then conflict-consequence-decision, then setup-tension-reversal.
+
+⚠ EXAMPLES OF OVERLAP (DO NOT DO THIS):
+- Chapter 5: "Team discusses mission, decides to proceed" + Chapter 6: "Team executes mission" = OVERLAP, MERGE
+- Chapter 12: "Maria confronts Jack about his past" + Chapter 13: "Maria and Jack argue about trust" = OVERLAP (same relationship beat), MERGE
+- Chapter 18: "They escape the burning building" + Chapter 19: "They escape the pursuing soldiers" = OVERLAP (escape repeated twice), MERGE
+
+⚠ BE BRUTAL: 25 DISTINCT chapters is better than 35 chapters with overlap. If you're unsure whether two chapters are distinct, they probably aren't — MERGE them.
+
+---
+
 Write every chapter in order. Do not skip any. After all chapters, write one short paragraph on overall pacing: where is the midpoint, the "all is lost" moment, and when does the climax begin?
+
+⚠ IMPORTANT: Output the COMPLETE list in one go. Do not stop early. Every chapter must be included.

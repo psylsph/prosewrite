@@ -12,7 +12,7 @@ output_dir = "projects"
 api_base_url  = "https://zenmux.ai/api/v1"
 #api_base_url  = "http://localhost:11434/api/chat"
 api_key_env   = "API_KEY"
-model         = "moonshotai/kimi-k2-thinking"
+model         = "deepseek/deepseek-reasoner"
 #model         = "kimi-k2:1t-cloud"
 temperature   = 0.6          # DeepSeek default; data analysis/general use
 max_tokens    = 32768
@@ -52,6 +52,18 @@ max_tokens    = 16384
 temperature   = 0.6
 max_tokens    = 32768
 
+[stages.chapter_list_review]
+# Review of chapter list — analytical
+model = "z-ai/glm-5"
+temperature   = 0.3
+max_tokens    = 16384
+
+[stages.chapter_outline_review]
+# Review of individual chapter outlines — analytical
+model = "z-ai/glm-5"
+temperature   = 0.3
+max_tokens    = 16384
+
 [stages.chapter_writer]
 # Prose generation — creative writing
 temperature   = 1.0
@@ -59,16 +71,19 @@ max_tokens    = 32768
 
 [stages.chapter_reviewer]
 # Critical analysis — data analysis mode
+model = "z-ai/glm-5"
 temperature   = 0.3
 max_tokens    = 16384
 
 [stages.continuity_reviewer]
 # Cross-chapter continuity check — analytical
+model = "z-ai/glm-5"
 temperature   = 0.3
 max_tokens    = 32768
 
 [stages.export]
 # Mechanical assembly — data analysis mode
+model = "z-ai/glm-5"
 temperature   = 0.3
 max_tokens    = 16384
 

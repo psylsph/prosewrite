@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from .client import LLMClient
-from .config import ProjectConfig, resolve_stage
+from .config import resolve_stage
 from .display import ReviewResult
 from .pipeline import Pipeline
 
@@ -59,8 +59,8 @@ class AIReviewer:
         previous_chapters: str = "",
         macro_summary: str = "",
     ) -> ReviewResult:
-        stage_cfg = resolve_stage(self.cfg, "chapter_reviewer")
-        system = self.pipeline.build_system_prompt("chapter_reviewer")
+        stage_cfg = resolve_stage(self.cfg, "chapter_outline_review")
+        system = self.pipeline.build_system_prompt("chapter_outline_review")
         user_prompt = self.pipeline.build_user_prompt(
             "stage5_reviewer.txt",
             project_name=self.cfg.name,
@@ -97,8 +97,8 @@ class AIReviewer:
         previous_outlines: str = "",
     ) -> ReviewResult:
         """Review chapter outline with continuity checking against previous outlines."""
-        stage_cfg = resolve_stage(self.cfg, "chapter_reviewer")
-        system = self.pipeline.build_system_prompt("chapter_reviewer")
+        stage_cfg = resolve_stage(self.cfg, "chapter_outline_review")
+        system = self.pipeline.build_system_prompt("chapter_outline_review")
 
         user_prompt = self.pipeline.build_user_prompt(
             "stage4_outline_review.txt",
@@ -131,8 +131,8 @@ class AIReviewer:
         character_index: str,
     ) -> ReviewResult:
         """Review the entire chapter list for duplicates and structural issues."""
-        stage_cfg = resolve_stage(self.cfg, "chapter_reviewer")
-        system = self.pipeline.build_system_prompt("chapter_reviewer")
+        stage_cfg = resolve_stage(self.cfg, "chapter_list_review")
+        system = self.pipeline.build_system_prompt("chapter_list_review")
 
         user_prompt = self.pipeline.build_user_prompt(
             "stage4_chapter_list_review.txt",
