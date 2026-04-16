@@ -23,6 +23,7 @@ class ProjectSettings:
 class ProjectProgress:
     approved_outlines: list[int] = field(default_factory=list)
     approved_chapters: list[int] = field(default_factory=list)
+    approved_chapter_list: bool = False
     last_approved_chapter: int = 0
 
 
@@ -89,5 +90,7 @@ def new_state(project_name: str, config_style: dict | None = None) -> ProjectSta
         settings.pov = config_style.get("pov", settings.pov)
         settings.tense = config_style.get("tense", settings.tense)
         settings.genre = config_style.get("genre", settings.genre)
-        settings.min_words_per_chapter = config_style.get("min_words", settings.min_words_per_chapter)
+        settings.min_words_per_chapter = config_style.get(
+            "min_words", settings.min_words_per_chapter
+        )
     return ProjectState(project_name=project_name, settings=settings)

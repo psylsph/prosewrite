@@ -185,13 +185,30 @@ def run(pipeline, state: ProjectState) -> ProjectState:
 
     # Resume: load existing chapter list from disk if present
     existing_list = pipeline.read_file("chapter_outlines/chapter_list.md")
-    if existing_list.strip():
+
+    # Check if chapter list was already approved
+    if state.progress.approved_chapter_list and existing_list.strip():
+        chapter_list_text = existing_list
+        chapters = _parse_chapter_list(chapter_list_text)
+        show_info(
+            f"Loaded existing chapter_list.md ({len(chapters)} chapters found, already approved)."
+        )
+        console.print(
+            "[dim]Chapter list already approved — skipping to outlines.[/dim]"
+        )
+        # Skip to Step 4b (individual outlines)
+        need_generation = False
+
+    elif existing_list.strip():
         chapter_list_text = existing_list
         chapters = _parse_chapter_list(chapter_list_text)
         show_info(f"Loaded existing chapter_list.md ({len(chapters)} chapters found).")
         stream_response(iter([chapter_list_text]), title="Chapter List (existing)")
         action, user_text = loop.wait("Chapter List (existing)")
         if action == ApprovalAction.APPROVE:
+            # Mark chapter list as approved
+            state.progress.approved_chapter_list = True
+            save_state(state, pipeline.project_dir)
             # Go to review section
             need_generation = False
         elif action == ApprovalAction.EDIT:
@@ -344,6 +361,9 @@ def run(pipeline, state: ProjectState) -> ProjectState:
                 state.settings.total_chapters = actual_chapters
                 save_state(state, pipeline.project_dir)
                 show_info(f"Updated chapter count: {old_count} → {actual_chapters}")
+            # Mark chapter list as approved
+            state.progress.approved_chapter_list = True
+            save_state(state, pipeline.project_dir)
             show_success("chapter_list.md approved.")
             break
         elif action == ApprovalAction.REGENERATE:

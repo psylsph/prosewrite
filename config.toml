@@ -16,7 +16,7 @@ model         = "deepseek/deepseek-reasoner"
 #model         = "kimi-k2:1t-cloud"
 temperature   = 0.6          # DeepSeek default; data analysis/general use
 max_tokens    = 32768
-timeout_s     = 360
+timeout_s     = 720
 
 # ---------------------------------------------------------------------------
 # Per-stage overrides — temperatures follow DeepSeek recommendations:
